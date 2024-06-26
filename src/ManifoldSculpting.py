@@ -17,7 +17,7 @@ class ManifoldSculpting:
 
         self.omega = np.ones((self.N_points, self.n_neighbors), dtype=int)
     
-    def calculate_cosine(self, p_idx: int, n_idx: int, m_idx: int):
+    def _calculateCosine(self, p_idx: int, n_idx: int, m_idx: int):
         p: float = self.X[p_idx, :]
         n: float = self.X[n_idx, :]
         m: float= self.X[m_idx, :]
@@ -34,7 +34,7 @@ class ManifoldSculpting:
 
         return dot_prod / norm_prod # cosine of the angle between pn and nm
     
-    def most_collinear_ngbr(self):
+    def _mostCollinearNeighbor(self):
         m = np.zeros((self.N_points, self.n_neighbors), dtype=int)
         c = np.zeros((self.N_points, self.n_neighbors), dtype=float)
         for i in range(self.N_points):
@@ -48,14 +48,14 @@ class ManifoldSculpting:
                     if np.array_equal(p, self.X[self.N_indexes[n_idx, k]]):
                         cosines[k - 1] = 0
                     else:
-                        cosines[k - 1] = self.calculate_cosine(i, n_idx, self.N_indexes[n_idx, k])
+                        cosines[k - 1] = self._calculateCosine(i, n_idx, self.N_indexes[n_idx, k])
                 
                 m[i, j] = np.argmax(cosines)
                 c[i, j] = cosines[m[i, j]]
                 
         return m, c
     
-    def AlignAxes_PC(self):
+    def _alignAxesPC(self):
 
         """Aligns the axes of the dataset P using the Principal Components method.
 
@@ -113,12 +113,12 @@ class ManifoldSculpting:
             for j in range(self.D):
                 self.X[i, j] = np.dot(self.X[i, :], G[:, j]) + np.mean(self.X[:, j])
     
-    def update_distances(self):
+    def _updateDistances(self):
         for i in range(self.N_points):
             for j in range(self.n_neighbors):
                 self.distances[i, j] = np.linalg.norm(self.X[i] - self.X[self.neighbors[i, j]])
     
-    def ComputeError(self, p_cur_idx: int):
+    def _computeError(self, p_cur_idx: int):
         error: float = 0.0
         pi_inv = 1 / np.pi
         avg_dist_inv = 1 / (2 * self.dist_avg)
@@ -132,29 +132,29 @@ class ManifoldSculpting:
         
         return error
     
-    def AdjustPoints(self, p_cur_idx: int, eta: float):
+    def _adjustPoints(self, p_cur_idx: int, eta: float):
         s: int = -1 # Initialize the number of steps
         improved: bool = True # Initialize the improved flag
 
         while improved:
             s += 1
             improved = False
-            error = self.ComputeError(p_cur_idx)
+            error = self._computeError(p_cur_idx)
 
             for j in np.arange(self.D_pres):
                 self.X[p_cur_idx, j] += eta
-                self.update_distances()
-                self.new_m, self.new_c = self.most_collinear_ngbr()
+                self._updateDistances()
+                self.new_m, self.new_c = self._mostCollinearNeighbor()
 
-                if self.ComputeError(p_cur_idx) > error:
+                if self._computeError(p_cur_idx) > error:
                     self.X[p_cur_idx, j] -= 2 * eta
-                    self.update_distances()
-                    self.new_m, self.new_c = self.most_collinear_ngbr()
+                    self._updateDistances()
+                    self.new_m, self.new_c = self._mostCollinearNeighbor()
 
-                    if self.ComputeError(p_cur_idx) > error:
+                    if self._computeError(p_cur_idx) > error:
                         self.X[p_cur_idx, j] += eta
-                        self.update_distances()
-                        self.new_m, self.new_c = self.most_collinear_ngbr()
+                        self._updateDistances()
+                        self.new_m, self.new_c = self._mostCollinearNeighbor()
                     else:
                         improved = True
                 else:
@@ -166,13 +166,13 @@ class ManifoldSculpting:
         self.neighbors, self.distances = model.kneighbors(self.X)
 
         # Step 2
-        self.m, self.c = self.most_collinear_ngbr()
+        self.m, self.c = self._mostCollinearNeighbor()
 
         self.dist_avg = np.mean(self.distances[:, 1:])
         self.eta = self.dist_avg.copy()
 
         # Step 3
-        self.AlignAxes_PC()
+        self._alignAxesPC()
 
         # Step 4
         for _ in range(self.iterations):
@@ -180,11 +180,11 @@ class ManifoldSculpting:
             self.X[:, :-self.D_scal] *= self.sigma
 
             # recalculate distances
-            self.update_distances()
+            self._updateDistances()
             
             while np.mean(self.distances[:, 1:]) < self.dist_avg:
                 self.X[:, :self.D] *= self.sigma_inv
-                self.update_distances()
+                self._updateDistances()
 
             # Step 4b
             queue = []
@@ -197,7 +197,7 @@ class ManifoldSculpting:
                 p_cur_idx = queue.pop(0)
 
                 if p_cur_idx not in adjusted:
-                    steps += self.AdjustPoints(p_cur_idx, self.eta)
+                    steps += self._adjustPoints(p_cur_idx, self.eta)
                     adjusted.append(p_cur_idx)
                     queue.append(self.neighbors[p_cur_idx, 1:])
             if steps >= self.D:
