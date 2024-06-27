@@ -3,19 +3,24 @@ from sklearn.neighbors import NearestNeighbors
 import random
 
 class ManifoldSculpting:
-    def __init__(self, X: np.ndarray, n_neighbors: int, D_pres: int, iterations: int):
-        self.X = X
-        self.N_points: int = X.shape[0]
-        self.D: int = X.shape[1]
+    def __init__(self, n_neighbors: int, D_pres: int):
         self.n_neighbors: int = n_neighbors
         self.D_pres: int = D_pres
-        self.D_scal: int = self.D - D_pres
-        self.iterations: int = iterations
+        # self.iterations: int = iterations
+        self.X: np.ndarray = None
 
         self.sigma: float = 0.99 # scaling factor
         self.sigma_inv: float = 1 / self.sigma # inverse of the scaling factor
-
-        self.omega = np.ones((self.N_points, self.n_neighbors), dtype=int)
+        
+        self.c: np.ndarray = None # cosines of the angles between the points and their most collinear neighbors
+        self.distances: np.ndarray = None # distances between the points and their neighbors
+        self.dist_avg: float = None # average distance between the points and their neighbors
+        self.eta: float = None # step size
+        self.m: np.ndarray = None # most collinear neighbors of the neighbors of the points
+        self.neighbors: np.ndarray = None # neighbors of the points
+        self.new_c: np.ndarray = None # new cosines of the angles between the points and their most collinear neighbors
+        self.new_dist: np.ndarray = None # new distances between the points and their neighbors
+        self.omega: np.ndarray = None # weight of the neighbors of the points
     
     def _calculateCosine(self, p_idx: int, n_idx: int, m_idx: int) -> float:
         """_summary_
@@ -91,7 +96,6 @@ class ManifoldSculpting:
 
         # Center the data
         mean: float = np.mean(self.X, axis=0) # Mean for every dimension
-
         self.X -= mean
 
         Q = self.X.copy()
@@ -136,30 +140,37 @@ class ManifoldSculpting:
         
         for i in range(self.N_points):
             for j in range(self.D):
-                self.X[i, j] = np.dot(self.X[i, :], G[:, j]) + np.mean(self.X[:, j])
+                self.X[i, j] = np.dot(self.X[i, :], G[:, j]) + mean[j]
     
-    def _updateDistances(self):
-        self.new_dist = np.zeros((self.N_points, self.n_neighbors))
-        for i in range(self.N_points):
-            for j in range(self.n_neighbors):
+    def _updateDistances(self, rows: list = None, cols: list = None):
+        if rows is None:
+            rows = np.arange(self.N_points)
+        if cols is None:
+            cols = np.arange(self.n_neighbors)
+        for i in rows:
+            for j in cols:
                 self.new_dist[i, j] = np.linalg.norm(self.X[i] - self.X[self.neighbors[i, j]])
 
-    def _updateCosines(self):
-        for i in range(self.N_points):
-            for j in range(1, self.n_neighbors):
+    def _updateCosines(self, rows: list = None, cols: list = None):
+        if rows is None:
+            rows = np.arange(self.N_points)
+        if cols is None:
+            cols = np.arange(1, self.n_neighbors)
+
+        for i in rows:
+            for j in cols:
                 idx_n = self.neighbors[i, j]
                 idx_m = self.m[i, j]
 
                 if np.array_equal(self.X[i, :], self.X[idx_m, :]):
                     self.new_c[i, j] = 0
                 else:
-                    if idx_m not in self.neighbors[idx_n, :]:
-                        print("Neighbors of i: " + str(self.neighbors[i, :]))
-                        print("Neighbors of " + str(idx_n)+ ": " + str(self.neighbors[idx_n, :]))
-                        print("m: " + str(idx_m))
+                    # if idx_m not in self.neighbors[idx_n, :]:
+                    #     print("Neighbors of i: " + str(self.neighbors[i, :]))
+                    #     print("Neighbors of " + str(idx_n)+ ": " + str(self.neighbors[idx_n, :]))
+                    #     print("m: " + str(idx_m))
 
                     self.new_c[i, j] = self._calculateCosine(i, idx_n, idx_m)
-        
 
     def _computeError(self, p_cur_idx: int):
         error: float = 0.0
@@ -186,25 +197,24 @@ class ManifoldSculpting:
         while improved:
             s += 1
             improved = False
-            self.new_dist = self.distances.copy()
             self.new_c = self.c.copy()
             error = self._computeError(p_cur_idx)
 
             for j in np.arange(self.D_pres):
                 self.X[p_cur_idx, j] += eta
-                self._updateDistances()
-                self._updateCosines()
+                self._updateDistances(rows=[p_cur_idx], cols = None)
+                self._updateCosines(rows=[p_cur_idx], cols = None)
 
                 if self._computeError(p_cur_idx) > error:
                     self.X[p_cur_idx, j] -= 2 * eta
-                    self._updateDistances()
+                    self._updateDistances(rows=[p_cur_idx], cols = None)
 
-                    self._updateCosines()
+                    self._updateCosines(rows=[p_cur_idx], cols = None)
 
                     if self._computeError(p_cur_idx) > error:
                         self.X[p_cur_idx, j] += eta
-                        self._updateDistances()
-                        self._updateCosines()
+                        self._updateDistances(rows=[p_cur_idx], cols = None)
+                        self._updateCosines(rows=[p_cur_idx], cols = None)
                     else:
                         improved = True
                 else:
@@ -212,8 +222,14 @@ class ManifoldSculpting:
 
         return s
                 
-    def fit_transform(self):
+    def fit_transform(self, X: np.ndarray):
         # Step 1
+        self.X = X
+        self.N_points: int = self.X.shape[0]
+        self.D: int = self.X.shape[1]
+        self.D_scal: int = self.D - self.D_pres
+        self.omega = np.ones((self.N_points, self.n_neighbors), dtype=int)
+
         model = NearestNeighbors(n_neighbors=self.n_neighbors).fit(self.X)
         self.distances, self.neighbors = model.kneighbors(self.X)
         print("Step 1 done.\n")
@@ -232,20 +248,24 @@ class ManifoldSculpting:
         print("Step 3 done.\n")
 
         # Step 4
-        for i in range(self.iterations):
+        self.new_dist = self.distances.copy()
+
+        sum_changes: float = 0.0
+
+
+
+        while sum_changes > 0.1:
+            X_old = self.X.copy()
             # Step 4a
             self.X[:, :-self.D_scal] *= self.sigma
 
             # recalculate distances
-            self._updateDistances()
-            self.distances = self.new_dist.copy()
+            self._updateDistances(rows=None, cols=None)
             
             while np.mean(self.distances[:, 1:]) < self.dist_avg:
                 self.X[:, :self.D] *= self.sigma_inv
-                self._updateDistances()
+                self._updateDistances(rows=None, cols=None)
                 self.distances = self.new_dist.copy()
-            
-            print("Step 4a cycle " + str(i) + " done.\n")
 
             # Step 4b
             queue = []
@@ -256,8 +276,6 @@ class ManifoldSculpting:
             adjusted = []
             while len(queue) > 0:
                 p_cur_idx = queue.pop(0)
-
-                print(len(queue))
                 if p_cur_idx not in adjusted:
                     steps += self._adjustPoints(p_cur_idx, self.eta)
                     adjusted.append(p_cur_idx)
@@ -271,8 +289,12 @@ class ManifoldSculpting:
                 self.eta *= 1/0.9
             else:
                 self.eta *= 0.9
-            
-            print("Step 4b cycle " + str(i) + " done.\n")
+
+            sum_changes = np.linalg.norm(X_old - self.X) / (self.N_points * self.D)
+
+
+        
+        print("Step 4 done.\n")
     
         # Step 5
 
