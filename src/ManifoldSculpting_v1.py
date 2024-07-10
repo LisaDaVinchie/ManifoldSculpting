@@ -4,7 +4,7 @@ from sklearn.decomposition import PCA
 import random
 
 class ManifoldSculpting:
-    def __init__(self, n_neighbors: int = 5, n_components: int = 2, sigma: float = 0.99, iterations: int = 100, rotate: bool = True):
+    def __init__(self, n_neighbors: int = 5, n_components: int = 2, sigma: float = 0.99, iterations: int = 100, rotate: bool = True, save_checkpoints: bool = False, checkpoint_path: str = None, checkpoint_interval: int = 10):
         self.n_neighbors: int = n_neighbors
         self.n_components: int = n_components
         self.scale_factor = 1.0 # learning rate
@@ -14,8 +14,22 @@ class ManifoldSculpting:
 
         self.rotate: bool = rotate # flag to rotate the dataset
         self.iterations: int = iterations # number of iterations
+        self.save_checkpoints: bool = save_checkpoints # flag to save checkpoints
+
+        if self.save_checkpoints:
+            self.checkpoint_path: str = checkpoint_path
+            self.checkpoint_interval: int = checkpoint_interval
 
     def fit_transform(self, X: np.ndarray):
+        """Find the embedding of the dataset X
+
+        Args:
+            X (np.ndarray): dataset to be embedded, composed of N points with D dimensions
+
+        Returns:
+            best_transformed_X (np.ndarray): dataset embedded in the new space, composed of N points with n_components dimensions
+            error (np.ndarray): error of the embedding at each iteration
+        """
         # Step 1
         self.X = X
         self.N_points: int = self.X.shape[0]
@@ -51,7 +65,7 @@ class ManifoldSculpting:
         self.best_transformed_X = np.copy(self.transformed_X)
 
         print("Initialisation")
-        while self.scale_factor > 0.01 and epoch < 5:
+        while self.scale_factor > 0.01:
             mean_error = self._step()
             epoch += 1
             print(f"Epoch: {epoch}, Error: {mean_error}")
@@ -78,6 +92,11 @@ class ManifoldSculpting:
                 diff = np.linalg.norm(self.best_transformed_X - old_transformed_X) / np.linalg.norm(old_transformed_X)
 
             epoch += 1
+
+            if self.save_checkpoints and epoch % self.checkpoint_interval == 0:
+                np.save(f"{self.checkpoint_path}/checkpoint_{epoch}.npy", self.best_transformed_X)
+
+            
             
             print(f"Epoch: {epoch}, Error: {mean_error:.4f}, Diff: {diff:.4f}")
         
@@ -86,6 +105,16 @@ class ManifoldSculpting:
         return self.best_transformed_X[:, self.D_pres], errors
 
     def _findNearestNeighbors(self, data, n_neighbors: int):
+        """Find the n_neighbors nearest neighbors of each point in the dataset
+
+        Args:
+            data (MatrixLike): dataset composed of N points with D dimensions
+            n_neighbors (int): number of neighbors to be found (the point itself included)
+
+        Returns:
+            distances (np.ndarray): distances between each point and its neighbors (the point itself escluded)
+            neighbors (np.ndarray): indices of the neighbors of each point (the point itself escluded)
+        """
         model = NearestNeighbors(n_neighbors=n_neighbors)
         model.fit(data)
         distances, neighbors = model.kneighbors(data)
@@ -96,8 +125,8 @@ class ManifoldSculpting:
         Calculate the most collinear neighbor of each neighbor of each point in the dataset
 
         Returns:
-            -np.ndarray of ints: m, where m[i, j] is the index of the neighbor of the i-th point that is most collinear with the j-th neighbor of the i-th point
-            -np.ndarray of floats: c, where c[i, j] is the cosine of the angle between the i-th point and the m[i, j]-th neighbor
+            mcn_index (np.ndarray): indices of the most collinear neighbors of each neighbor of each point
+            mcn_angles (np.ndarray): angles between the points and their most collinear neighbors
         """
         mcn_index = np.ones((self.N_points, self.n_neighbors - 1), dtype=int) * (-2)
         mcn_angles = np.ones((self.N_points, self.n_neighbors - 1), dtype=float) * (-2)
@@ -135,7 +164,7 @@ class ManifoldSculpting:
         Calculate the average distance between the points and their neighbors
 
         Returns:
-            -float: average distance between the points and their neighbors
+            float: average distance between the points and their neighbors
         """
         dist_sum: float = 0
         for i in range(self.N_points):
@@ -144,6 +173,11 @@ class ManifoldSculpting:
         return dist_sum / (self.N_points * (self.n_neighbors - 1))
     
     def _step(self):
+        """Step of the manifold sculpting algorithm
+
+        Returns:
+            mean_error (float): mean error of the step
+        """
         first_point = np.random.randint(0, self.N_points)
 
         q = []
@@ -184,7 +218,15 @@ class ManifoldSculpting:
         return mean_error
 
     def _computeError(self, p_cur_idx: int, visited: list) -> float:
+        """Compute the error committed while reconstructing the neighborhood of p_cur_idx
 
+        Args:
+            p_cur_idx (int): index of the point to be reconstructed
+            visited (list): list of the indices of the points already visited
+
+        Returns:
+            float: error committed while reconstructing the neighborhood of p_cur_idx
+        """
         omega = np.zeros(self.n_neighbors - 1)
         for i in range(self.n_neighbors - 1):
             if self.neighbors[p_cur_idx, i] in visited:
@@ -226,7 +268,7 @@ class ManifoldSculpting:
 
         error = self._computeError(p_cur_idx, visited)
 
-        while improved and s < 30:
+        while improved:
             s += 1
             improved = False
 
@@ -247,3 +289,64 @@ class ManifoldSculpting:
                     improved = True
 
         return s, error
+    
+    def _alignAxesPC(data, Dpres: int):
+
+        """Aligns the axes of the dataset P using the Principal Components method.
+
+        Parameters:
+        - data: dataset to be aligned, with shape (N, D), where N is the number of points and D is the number of dimensions
+        - Dpres: number of dimensions to be preserved
+        """
+
+        N_points = data.shape[0]
+        D = data.shape[1]
+        # Center the data
+        mean: float = np.mean(data, axis=0) # Mean for every dimension
+        data -= mean
+
+        Q = data.copy()
+
+        G = np.eye(D) # Matrix of standard basis vectors
+
+        # Find principal components
+        for k in range(Dpres):
+            c = np.random.rand(D) # Random vector of dimension D
+
+            for _ in range(10):
+                t = np.zeros(D)
+
+                for q in Q: # For each row of Q
+                    t += np.dot(q, c) * q
+                c = t / np.linalg.norm(t)
+
+            for q in Q: # For each row of Q
+                q -= np.dot(c, q) * c
+            
+            a = G[:, k]
+
+            b = (c - np.dot(a, c) * a) / np.linalg.norm(c - np.dot(a, c) * a)
+
+            phi  = np.arctan(np.dot(b, c) / np.dot(a, c))
+
+            for j in np.arange(k, D):
+                u = np.dot(a, G[:, j])
+                v = np.dot(b, G[:, j])
+
+                G[:, j] -= u * a
+                G[:, j] -= v * b
+
+                r = np.sqrt(u * u + v * v)
+                theta = np.arctan(v / u)
+
+                u = r * np.cos(theta + phi)
+                v = r * np.sin(theta + phi)
+
+                G[:, j] += u * a
+                G[:, j] += v * b
+        
+        for i in range(N_points):
+            for j in range(D):
+                data[i, j] = np.dot(data[i, :], G[:, j]) + mean[j]
+        
+        return data
