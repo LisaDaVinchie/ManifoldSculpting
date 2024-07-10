@@ -5,7 +5,7 @@ from scipy.special import ellipkinc
 class swissRoll:
     def __init__(self, N: int):
         self.N: int = N
-        self.t: np.ndarray = 8 * np.arange(N) / N + 2
+        self.t = 8 * np.arange(N) / N + 2
         self.y = np.random.uniform(-6, 6, self.N)
 
     def swissRoll3D(self):
@@ -14,9 +14,6 @@ class swissRoll:
 
         
         dataset[:, 1] = self.y
-        # N_inv = 1 / self.N
-
-        # t = 8 * np.arange(self.N) * N_inv + 2
 
         dataset[:, 0] = self.t * np.sin(self.t)
         dataset[:, 2] = self.t * np.cos(self.t)
@@ -54,3 +51,20 @@ class sCurve:
         dataset[:, 1] = np.sin(self.t)
 
         return dataset
+
+
+N_points = [250, 300, 400, 500, 600, 700, 800, 1000, 2000, 4000]
+
+for N in N_points:
+    swissroll = swissRoll(N)
+    swissroll3D = swissroll.swissRoll3D()
+    swissroll2D = swissroll.swissRoll2D()
+
+    scurve = sCurve(N)
+    scurve3D = scurve.sCurve3D()
+    scurve2D = scurve.sCurve2D()
+
+    np.save(f'../data/SwissRoll3D/N_{N}.npy', swissroll3D)
+    np.save(f'../data/SwissRoll2D/N_{N}.npy', swissroll2D)
+    np.save(f'../data/sCurve3D/N_{N}.npy', scurve3D)
+    np.save(f'../data/sCurve2D/N_{N}.npy', scurve2D)

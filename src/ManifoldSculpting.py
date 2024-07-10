@@ -38,7 +38,7 @@ class ManifoldSculpting:
         m = self.X[m_idx, :]
 
         if np.array_equal(p, m):
-            return 0
+            return 1
         else:
             pn = n - p # vector from p to n
             nm = m - n # vector from n to m
@@ -48,7 +48,13 @@ class ManifoldSculpting:
             cosine = dot_prod / norm_prod # cosine of the angle between pn and nm
         
             if abs(cosine) > 1:
-                raise ValueError("Invalid cosine value. Cosine cannot be greater than 1.")
+                print("Cosine: " + str(cosine))
+                print("Dot product: " + str(dot_prod))
+                print("Norm product: " + str(norm_prod))
+                print("pn: " + str(pn))
+                print("nm: " + str(nm))
+                # raise ValueError("Invalid cosine value. Cosine cannot be greater than 1.")
+                return 1
             else:
                 return cosine
     
@@ -63,20 +69,17 @@ class ManifoldSculpting:
         m = np.ones((self.N_points, self.n_neighbors), dtype=int) * (-2)
         c = np.ones((self.N_points, self.n_neighbors), dtype=float) * (-2)
         for i in range(self.N_points):
-            p = self.X[i, :]
             for j in range(1, self.n_neighbors):
                 n_idx = self.neighbors[i, j]
 
-                max_cosine: float = -2.0
+                max_cosine: float = 0
                 max_idx: int = -2
                 for k in range(1, self.n_neighbors):
                     m_idx = self.neighbors[n_idx, k]
-                    if np.array_equal(p, self.X[m_idx, :]):
-                        cosine = 0
-                    else:
-                        cosine = self._calculateCosine(i, n_idx, m_idx)
+                    
+                    cosine = self._calculateCosine(i, n_idx, m_idx)
 
-                    if cosine > max_cosine:
+                    if abs(cosine - (-1)) < abs(max_cosine - (-1)):
                         max_cosine = cosine
                         max_idx = m_idx
 
@@ -230,7 +233,7 @@ class ManifoldSculpting:
         self.D_scal: int = self.D - self.D_pres
         self.omega = np.ones((self.N_points, self.n_neighbors), dtype=int)
 
-        model = NearestNeighbors(n_neighbors=self.n_neighbors).fit(self.X)
+        model = NearestNeighbors(n_neighbors=self.n_neighbors, metric='euclidean').fit(self.X)
         self.distances, self.neighbors = model.kneighbors(self.X)
         print("Step 1 done.\n")
 
@@ -250,11 +253,11 @@ class ManifoldSculpting:
         # Step 4
         self.new_dist = self.distances.copy()
 
-        sum_changes: float = 0.0
+        sum_changes: float = 10.0
 
 
 
-        while sum_changes > 0.1:
+        while sum_changes > self.dist_avg * 0.1:
             X_old = self.X.copy()
             # Step 4a
             self.X[:, :-self.D_scal] *= self.sigma
@@ -293,11 +296,13 @@ class ManifoldSculpting:
             sum_changes = np.linalg.norm(X_old - self.X) / (self.N_points * self.D)
 
 
+
+
         
         print("Step 4 done.\n")
     
         # Step 5
 
-        return self.X[:, :self.D_pres]
+        return self.X
 
        
