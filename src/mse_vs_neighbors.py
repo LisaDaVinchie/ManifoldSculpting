@@ -1,5 +1,5 @@
 import numpy as np
-import ManifoldSculpting_v2 as ms
+import ManifoldSculpting as ms
 from sklearn.manifold import Isomap, LocallyLinearEmbedding
 import time
 import os

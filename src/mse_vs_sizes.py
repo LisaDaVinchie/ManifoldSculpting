@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.manifold import Isomap, LocallyLinearEmbedding
-import ManifoldSculpting_v2 as ms
+import ManifoldSculpting as ms
 import os
 import time
 
