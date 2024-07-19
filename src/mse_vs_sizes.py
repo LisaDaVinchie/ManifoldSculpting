@@ -33,7 +33,5 @@ for s in sizes:
     X_MS = model.fit(X)
     elapsed_time.append(time.time() - start_time)
     np.savetxt(destination_folder + f"MS_{s}.npy", X_MS)
-    
-    print(f"size = {s} done")
 
 np.savetxt(destination_folder + "MS_time.npy", elapsed_time)

@@ -4,8 +4,6 @@ from sklearn.manifold import Isomap, LocallyLinearEmbedding
 import time
 import os
 
-# Load the dataset
-
 X = np.load('../data/SwissRoll3D/N_2000.npy')
 
 X_mean = np.mean(X, axis=0)
@@ -16,19 +14,17 @@ X_std = np.std(X, axis=0)
 
 X = X / X_std
 
-data_folder = '../data/results_SwissRoll/neighbors'
+data_folder = '../data/results_SwissRoll/neighbors/'
 
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
 
-# Define the number of neighbors to test
 neighbors = [20, 28, 40, 57, 80]
 
 n_comps = 2
 
 Isomap_time = []
 LLE_time = []
-
 MS_time = []
 
 for n in neighbors:
@@ -50,8 +46,6 @@ for n in neighbors:
     X_MS = MS.fit(X)
     MS_time.append(time.time() - start_time)
     np.savetxt(data_folder + "MS_" + str(n) + ".npy", X_MS)
-    
-    print(f"Done with {n} neighbors")
 
 np.savetxt(data_folder + "Isomap_time.npy", Isomap_time)
 np.savetxt(data_folder + "LLE_time.npy", LLE_time)

@@ -27,7 +27,5 @@ for i in range(len(sigma)):
     X_MS = model.fit(X)
     elapsed_time.append(time.time() - start_time)
     np.savetxt(destination_folder + f"MS_{i}.npy", X_MS)
-    
-    print(f"size = {i} done")
 
 np.savetxt(destination_folder + "MS_time.npy", elapsed_time)

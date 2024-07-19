@@ -1,15 +1,23 @@
 import numpy as np
-import scipy.integrate as integrate
-from scipy.special import ellipkinc
+import os
 
 class swissRoll:
     def __init__(self, N: int):
+        """Initializes the swiss roll dataset generator.
+
+        Args:
+            N (int): number of points in the dataset.
+        """
         self.N: int = N
         self.t = 8 * np.arange(N) / N + 2
         self.y = np.random.uniform(-6, 6, self.N)
 
     def swissRoll3D(self):
-        """Generates a swiss roll dataset with N samples."""
+        """Generates a 3D swiss roll dataset with N samples.
+
+        Returns:
+            MatrixLike: 3D swiss roll dataset.
+        """
         dataset = np.ndarray((self.N, 3))
 
         
@@ -21,6 +29,11 @@ class swissRoll:
         return dataset
     
     def swissRoll2D(self):
+        """Generates the 2D version of the swiss roll dataset with N samples.
+
+        Returns:
+            MatrixLike: 2D swiss roll dataset.
+        """
         dataset = np.ndarray((self.N, 2))
 
         dataset[:, 0] = 0.5 * (np.arcsinh(self.t) + self.t  * np.sqrt(self.t ** 2 + 1))
@@ -28,43 +41,17 @@ class swissRoll:
 
         return dataset
 
-class sCurve:
-    def __init__(self, N: int):
-        self.N: int = N
-        self.t = (2.2 * np.arange(N) - 0.1) * np.pi / N
+N_points = [250, 300, 400, 500, 600, 700, 800, 1000, 2000]
 
-    def sCurve3D(self):
-        """Generates a S-curve dataset with N samples."""
-        dataset = np.ndarray((self.N, 3))
+data_folder = '../data/SwissRoll3D/'
 
-
-        dataset[:, 0] = self.t
-        dataset[:, 1] = np.sin(self.t)
-        dataset[:, 2] = np.random.uniform(0, 2, self.N)
-
-        return dataset
-
-
-    def sCurve2D(self):
-        dataset = np.ndarray((self.N, 2))
-        dataset[:, 0] = np.sqrt(2) * ellipkinc(self.t, 0.5)
-        dataset[:, 1] = np.sin(self.t)
-
-        return dataset
-
-
-N_points = [250, 300, 400, 500, 600, 700, 800, 1000, 2000, 4000]
+if not os.path.exists(data_folder):
+    os.makedirs(data_folder)
 
 for N in N_points:
     swissroll = swissRoll(N)
     swissroll3D = swissroll.swissRoll3D()
     swissroll2D = swissroll.swissRoll2D()
 
-    scurve = sCurve(N)
-    scurve3D = scurve.sCurve3D()
-    scurve2D = scurve.sCurve2D()
-
-    np.save(f'../data/SwissRoll3D/N_{N}.npy', swissroll3D)
-    np.save(f'../data/SwissRoll2D/N_{N}.npy', swissroll2D)
-    np.save(f'../data/sCurve3D/N_{N}.npy', scurve3D)
-    np.save(f'../data/sCurve2D/N_{N}.npy', scurve2D)
+    np.save(f'N_{N}.npy', swissroll3D)
+    np.save(f'N_{N}.npy', swissroll2D)
