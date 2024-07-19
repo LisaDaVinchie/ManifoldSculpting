@@ -2,31 +2,46 @@ import numpy as np
 from collections import deque
 
 class ManifoldSculpting():
-    # general note: might want to pass the data to all functions
-    # instead of using self.pca_data
-    def __init__(self, n_neighbors=5, n_components = 2, iterations = 100, sigma = 0.99, rotate = True, max_iter_no_change = 30):
 
+    def __init__(self, n_neighbors=5, n_components = 2, iterations = 100, sigma = 0.99, perform_pca = True, max_iter_no_change = 30):
+        """Used to pass parameters to che class
+
+        Args:
+            n_neighbors (int, optional): Number of neighbors for each point. Defaults to 5.
+            n_components (int, optional): Number of dimensions to preserve. Defaults to 2.
+            iterations (int, optional): Max number of iterations. Defaults to 100.
+            sigma (float, optional): Scale factor. Defaults to 0.99.
+            perform_pca (bool, optional): Decide if you want to perform PCA. Defaults to True.
+            max_iter_no_change (int, optional): Maximum number of iterations with no change in the error. Defaults to 30.
+        """
         self.n_neighbors = n_neighbors
         self.n_components = n_components
         self.iterations = iterations
         self.sigma = sigma
-        self.rotate = rotate
+        self.rotate = perform_pca
 
         self.scale_factor = 1
 
         self.max_iter_no_change = max_iter_no_change
 
     def fit(self, data, save_checkpoints = False, folder = '', checkpoint_interval = 10):
+        """Pass the dataset to transform it into a lower dimension
+
+        Args:
+            data (MatrixLike): dataset to transfrom, made as a matrix of shape (n_samples, n_features)
+            save_checkpoints (bool, optional): Saves intermediate transformations of the dataset in .npy format. Defaults to False.
+            folder (str, optional): Where to save the checkpoints. Defaults to ''.
+            checkpoint_interval (int, optional): number of epochs between one checkpoint and another one. Defaults to 10.
+
+        Returns:
+            MatrixLike: transformed dataset
+        """
         self.data = data
         self.n_points = self.data.shape[0]
-        # find neighbours, distances and angles
         self.neighbours, self.distances0, self.avg_dist0= self._findKNN()
         self.mcn_index, self.mcn_angles = self._findMCN(self.data, self.neighbours)
         self.learning_rate = self.avg_dist0
 
-        print('neighbours found')
-
-        # PCA step
         if self.rotate:
             self.pca_data = self._computePCA()
             self.d_pres = np.arange(self.n_components,dtype=np.int32)
@@ -38,37 +53,21 @@ class ManifoldSculpting():
             self.d_scal = most_important[self.n_components:]
             self.pca_data = np.copy(self.data)
 
-        print('PCA done')
-
         if save_checkpoints:
                 np.save(folder + f"checkpoint_0.npy", self.pca_data)
 
-
-        # adjust variables for a bunch of times to get to a
-        # reasonable point to start comparing errors
-        print('Starting initialisation')
         epoch = 1
         while self.scale_factor > 0.01:
             mean_error = self._step()
             epoch += 1
 
-            if epoch % 10 == 0:
-                print(f"\tEpoch {epoch}, error {mean_error:.4f}, lr {self.learning_rate}")
-
             if save_checkpoints and epoch % checkpoint_interval == 0:
                 np.save(folder + f"checkpoint_{epoch}.npy", self.pca_data)
 
-            
-        
-        print('Initialisation done, epochs:', epoch)
-
-        
         epochs_since_improvement = 0
         best_error = np.inf
-        print('Starting iterations')
-        # adjust variables until error does not change or reached max iterations
+    
         while (epoch < self.iterations) and (epochs_since_improvement < self.max_iter_no_change):
-            
             mean_error = self._step()
 
             if mean_error < best_error:
@@ -81,9 +80,6 @@ class ManifoldSculpting():
 
             epoch += 1
             
-            if epoch % 10 == 0 or epochs_since_improvement == self.max_iter_no_change:
-                print(f"\tEpoch {epoch}, error {mean_error:.4f}")
-            
             if save_checkpoints and epoch % checkpoint_interval == 0:
                 np.save(folder + f"checkpoint_{epoch}.npy", self.pca_data)
 
@@ -93,7 +89,15 @@ class ManifoldSculpting():
         return self.pca_data
 
     def _computeError(self, p_idx, visited):
+        """Compute the error for the point p_idx
 
+        Args:
+            p_idx (int): index of the point
+            visited (list): list of points that were already visited in this step
+
+        Returns:
+            float: error for the point p_idx
+        """
         w = np.where(np.isin(self.neighbours[p_idx], list(visited)), 10, 1)
 
         neighbours = self.neighbours[p_idx]
@@ -115,33 +119,16 @@ class ManifoldSculpting():
         err_theta = (angles - self.mcn_angles[p_idx]) / np.pi
 
         total_err = np.sum(w * (err_dist**2 + err_theta**2))
-
-        # # iterate over all neighbours and compute distances and angles
-        # total_err = 0
-        # for i in range(self.n_neighbors):
-        #     n = self.neighbours[p_idx,i]
-        #     c = int(self.mcn_index[p_idx,i])
-        
-        #     a = self.pca_data[p_idx] - self.pca_data[n]
-        #     b = self.pca_data[c] - self.pca_data[n]
-        #     la = np.linalg.norm(a)
-        #     lb = np.linalg.norm(b)
-        #     theta = np.arccos(np.minimum(1,np.maximum(np.dot(a,b)/(la*lb),-1)))
-
-        #     err_dist = 0.5*(la-self.distances0[p_idx,i])/self.avg_dist0
-        #     err_theta = (theta-self.mcn_angles[p_idx,i])/np.pi
-        #     total_err += w[i] * (err_dist*err_dist + err_theta*err_theta)
         
         return total_err
 
     def _findKNN(self):
-        """find neighbours, distances, average distance, colinear points, angle 
-        for the data on which MnaifoldSculpting is being trained.
+        """Calculate the K nearest neighbors for each point in the dataset and their distances from the point
 
-        Returns
-        -------
-        tuple of numpy.ndarray
-            (neighbours, distances, average distance, colinear points, angle)
+        Returns:
+            MatrixLike: indexes of the K nearest neighbors for each point
+            MatrixLike: distances of the K nearest neighbors for each point
+            float: average distance between neighbors
         """
         N = self.data.shape[0]
        
@@ -160,15 +147,21 @@ class ManifoldSculpting():
         return _neigh, _dist, _ave_dist
     
     def _findMCN(self, data, neighbors):
+        """Find most collinear neighbors for each point in the dataset
+
+        Args:
+            data (MatrixLike): datset of shape (n_samples, n_features)
+            neighbors (MatrixLike): matrix of indexes of the K nearest neighbors for each point
+
+        Returns:
+            MatrixLike: indexes of the most collinear neighbors for each point
+            MatrixLike: angles between the point and the most collinear neighbors
+        """
         N = data.shape[0]
-        # find the most colinear point for each point-neighbour pair
         mcn_idx = np.zeros((N,self.n_neighbors),dtype=np.int32)
         mcn_angle = np.zeros((N,self.n_neighbors),dtype=np.float32)
-
         
-        # iterate over all points
         for i in range(N):
-            # for each point iterate over neighbours
 
             p = self.data[i, :]
 
@@ -176,9 +169,6 @@ class ManifoldSculpting():
                 n = self.data[n_idx, :]
                 pn = p - n
                 pn_dist = np.linalg.norm(pn)
-
-                # compute and keep track of all angles between i-j-k, where
-                # k are neighbours of j
 
                 nm = self.data[neighbors[n_idx]] - n
                 nm_dist = np.linalg.norm(nm, axis=1)
@@ -188,7 +178,6 @@ class ManifoldSculpting():
 
                 angles = np.arccos(cosines)
 
-                # choose the point such that the angle is the closest to pi
                 index = np.argmin(np.abs(angles-np.pi))
 
                 mcn_idx[i,j] = neighbors[n_idx,index]
@@ -197,17 +186,10 @@ class ManifoldSculpting():
         return mcn_idx, mcn_angle    
     
     def _computePCA(self):
-        """perform PCA on data to which ManifoldSculpting is being fit.
+        """Compute the kernel PCA of the dataset
 
-        Parameters
-        ----------
-        data : numpy.ndarray
-            array of shape [npoints, nfeatures]
-
-        Returns
-        -------
-        numpy.ndarray
-            data alligned to principal components
+        Returns:
+            MatrixLike: dataset transformed with PCA
         """
         cov = np.cov(self.data.T)
         eigval,eig = np.linalg.eig(cov)
@@ -217,12 +199,10 @@ class ManifoldSculpting():
         return self.data@eigvec
     
     def _averageNeighborDistance(self):
-        """compute average distance between neighbours
+        """Computes the average distance between each point and its neighbors
 
-        Returns
-        -------
-        float
-            average neighbour distance
+        Returns:
+            float: average distance between each point and its neighbors
         """
         dist = 0
         count = 0
@@ -235,8 +215,17 @@ class ManifoldSculpting():
         return dist
     
     def _adjustPoint(self, p, visited):
+        """Adjust the point p in the dataset
+
+        Args:
+            p (int): index of the point to adjust
+            visited (list): list of points that were already adjusted in this step
+
+        Returns:
+            int: steps taken to adjust the point p
+            float: error for the point p
+        """
         lr = self.learning_rate
-        #* np.random.uniform(0.6,1)
         improved = True
 
         err = self._computeError(p,visited)
@@ -264,7 +253,11 @@ class ManifoldSculpting():
         return s-1, err
     
     def _step(self):
+        """Manifold sculpting step
 
+        Returns:
+            float: mean error for the step
+        """
         N = self.pca_data.shape[0]
         
         origin = np.random.choice(np.arange(N, dtype=int))
@@ -282,17 +275,12 @@ class ManifoldSculpting():
 
         step = 0
         mean_error = 0
-        counter = 0 # should be the number of points at the end of loop
+        counter = 0
 
-        # iterate over items in queue
         while q:
-            # get the next point in queue and skip it if already adjusted
             p_idx = q.popleft()
             if p_idx in visited:
                 continue
-
-            # print(f'\rit:{iter}, p:{p}')
-            # enqueue all the point's neighbours
             
             q.extend(self.neighbours[p_idx, :])
 
@@ -304,14 +292,9 @@ class ManifoldSculpting():
 
         mean_error /= counter
 
-        # if not many improvements, reduce lr.
-        # if many steps, increase lr.
-        # note: values are from the authors' implementation, no clue why they are like this
         if step < N:
-            # self.learning_rate *= 0.87
             self.learning_rate *= 0.90
         else:
-            # self.learning_rate /= 0.91
             self.learning_rate /= 0.90
 
         return mean_error

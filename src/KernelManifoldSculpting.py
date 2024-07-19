@@ -14,7 +14,7 @@ class ManifoldSculpting():
             n_components (int, optional): Number of dimensions to preserve. Defaults to 2.
             iterations (int, optional): Max number of iterations. Defaults to 100.
             sigma (float, optional): Scale factor. Defaults to 0.99.
-            rotate (bool, optional): Decide if you want to perform PCA. Defaults to True.
+            perform_pca (bool, optional): Decide if you want to perform PCA. Defaults to True.
             max_iter_no_change (int, optional): Maximum number of iterations with no change in the error. Defaults to 30.
         """
 
