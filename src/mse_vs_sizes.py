@@ -4,9 +4,9 @@ import ManifoldSculpting as ms
 import os
 import time
 
-data_folder = "../data/sCurve3D/"
+data_folder = "../data/SwissRoll3D/"
 
-destination_folder = "../data/results_sCurve/k14/"
+destination_folder = "../data/results_SwissRoll/sizes/"
 
 if not os.path.exists(destination_folder):
     os.makedirs(destination_folder)
@@ -14,7 +14,7 @@ if not os.path.exists(destination_folder):
 sizes = [250, 500, 1000, 2000, 4000]
 
 n_comps = 2
-n_neighbors = 14
+n_neighbors = 20
 
 elapsed_time = []
 

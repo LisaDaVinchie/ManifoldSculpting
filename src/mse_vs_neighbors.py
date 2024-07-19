@@ -8,7 +8,15 @@ import os
 
 X = np.load('../data/SwissRoll3D/N_2000.npy')
 
-data_folder = '../data/results_SwissRoll/'
+X_mean = np.mean(X, axis=0)
+
+X = X - X_mean
+
+X_std = np.std(X, axis=0)
+
+X = X / X_std
+
+data_folder = '../data/results_SwissRoll/neighbors'
 
 if not os.path.exists(data_folder):
     os.makedirs(data_folder)
@@ -18,9 +26,10 @@ neighbors = [20, 28, 40, 57, 80]
 
 n_comps = 2
 
-MS_time = []
 Isomap_time = []
 LLE_time = []
+
+MS_time = []
 
 for n in neighbors:
 
@@ -37,14 +46,14 @@ for n in neighbors:
     np.savetxt(data_folder + "LLE_" + str(n) + ".npy", X_LLE)
 
     start_time = time.time()
-    MS = ms.ManifoldSculpting(n_neighbors=n, n_components=n_comps, iterations=500, max_iter_no_change=50, sigma=0.98)
+    MS = ms.ManifoldSculpting(n_neighbors=n, n_components=n_comps, iterations=800, max_iter_no_change=50)
     X_MS = MS.fit(X)
     MS_time.append(time.time() - start_time)
     np.savetxt(data_folder + "MS_" + str(n) + ".npy", X_MS)
     
     print(f"Done with {n} neighbors")
 
-np.savetxt(data_folder + "MS_time.npy", MS_time)
 np.savetxt(data_folder + "Isomap_time.npy", Isomap_time)
 np.savetxt(data_folder + "LLE_time.npy", LLE_time)
+np.savetxt(data_folder + "MS_time.npy", MS_time)
     
