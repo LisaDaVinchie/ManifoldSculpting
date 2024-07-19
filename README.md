@@ -1,0 +1,1 @@
+Implementation of the manifold sculpting algorithm, described in the paper [Iterative Non-linear Dimensionality Reduction by Manifold Sculpting](https://proceedings.neurips.cc/paper/2007/file/c06d06da9666a219db15cf575aff2824-Paper.pdf). Final project of the unsupervised learning course.
