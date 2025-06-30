@@ -8,6 +8,12 @@ DATASET_DIR := $(DATA_DIR)/datasets
 DATASET_DIR_3D := $(DATASET_DIR)/3d
 DATASET_DIR_2D := $(DATASET_DIR)/2d
 
+RESULTS_DIR := $(DATA_DIR)/results
+RESULTS_DIR_SIZES := $(RESULTS_DIR)/sizes
+RESULTS_DIR_NEIGHBORS := $(RESULTS_DIR_SIZES)/neighbors
+RESULTS_DIR_SCALEFACTORS := $(RESULTS_DIR_SIZES)/scale_factors
+
+
 CHECKPOINTS_DIR := $(DATA_DIR)/checkpoints
 CHECKPOINTS_TRIAL_BASENAME := trial_
 
@@ -35,7 +41,10 @@ config:
 	@echo '{' > $(PATHS_FILE)
 	@echo '"dataset2d": "$(DATASET_DIR_2D)",' >> $(PATHS_FILE)
 	@echo '"dataset3d": "$(DATASET_DIR_3D)",' >> $(PATHS_FILE)
-	@echo '"checkpoints_next": "$(CHECKPOINTS_DIR_NEXT)"' >> $(PATHS_FILE)
+	@echo '"checkpoints_next": "$(CHECKPOINTS_DIR_NEXT)",' >> $(PATHS_FILE)
+	@echo '"results_sizes": "$(RESULTS_DIR_SIZES)",' >> $(PATHS_FILE)
+	@echo '"results_neighbors": "$(RESULTS_DIR_NEIGHBORS)",' >> $(PATHS_FILE)
+	@echo '"results_scalefactors": "$(RESULTS_DIR_SCALEFACTORS)"' >> $(PATHS_FILE)
 	@echo '}' >> $(PATHS_FILE)
 
 gendata: config
