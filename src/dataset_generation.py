@@ -1,21 +1,11 @@
 import numpy as np
 from pathlib import Path
-import json
-import argparse
+from utils import parse_paths
 
 def main():
     N_points = [250, 300, 400, 500, 600, 700, 800, 1000, 2000]
-    
-    parser = argparse.ArgumentParser(description='Generate Swiss Roll dataset.')
-    parser.add_argument('--paths', type=Path, required=True,  help='Json file containing paths for dataset storage.')
-    args = parser.parse_args()
-    
-    paths_path = Path(args.paths)
-    if not paths_path.exists():
-        raise FileNotFoundError(f"Paths file {paths_path} does not exist. Please provide a valid path.")
-    
-    with open(paths_path, 'r') as file:
-        paths = json.load(file)
+        
+    paths = parse_paths()
 
     data_folder_2d = Path(paths["dataset2d"])
     data_folder_3d = Path(paths["dataset3d"])
@@ -29,6 +19,7 @@ def main():
 
         np.save(data_folder_3d / f'N_{N}.npy', swissroll3D)
         np.save(data_folder_2d / f'N_{N}.npy', swissroll2D)
+        
 class swissRoll:
     def __init__(self, N: int):
         """Initializes the swiss roll dataset generator.
