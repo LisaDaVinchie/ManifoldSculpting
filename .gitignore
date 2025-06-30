@@ -1,3 +1,9 @@
+# Data folder
+data/
+
+# Paths file
+src/paths.json
+
 # Ignore system specific files
 .DS_Store
 */.DS_Store
