@@ -2,8 +2,6 @@ import numpy as np
 from collections import deque
 from sklearn.decomposition import KernelPCA
 
-# Try to use kernel pca instead of regular pca
-
 class ManifoldSculpting():
 
     def __init__(self, n_neighbors: int = 10, n_components: int = 2, iterations: int = 100, sigma: float = 0.99, perform_pca: bool = True, max_iter_no_change: int = 30):
