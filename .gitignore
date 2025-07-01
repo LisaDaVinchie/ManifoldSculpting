@@ -1,5 +1,6 @@
 # Data folder
 data/
+figs/
 
 # Paths file
 src/paths.json
