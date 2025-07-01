@@ -1,6 +1,7 @@
 import numpy as np
 from collections import deque
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 class ManifoldSculpting():
 
@@ -25,12 +26,11 @@ class ManifoldSculpting():
 
         self.max_iter_no_change = max_iter_no_change
 
-    def fit(self, data: np.ndarray, folder: Path = Path("./"), save_checkpoints = False, checkpoint_interval = 10):
+    def fit(self, data: np.ndarray, folder: Path = None, checkpoint_interval = 10) -> np.ndarray:
         """Pass the dataset to transform it into a lower dimension
 
         Args:
             data (np.ndarray): dataset to transfrom, made as a matrix of shape (n_samples, n_features)
-            save_checkpoints (bool, optional): Saves intermediate transformations of the dataset in .npy format. Defaults to False.
             folder (str, optional): Where to save the checkpoints. Defaults to ''.
             checkpoint_interval (int, optional): number of epochs between one checkpoint and another one. Defaults to 10.
 
@@ -43,7 +43,6 @@ class ManifoldSculpting():
         self.neighbours, self.distances0, self.avg_dist0= self._findKNN()
         self.mcn_index, self.mcn_angles = self._findMCN(self.data, self.neighbours)
         self.learning_rate = self.avg_dist0
-        self.save_checkpoints = save_checkpoints
 
         if self.rotate:
             self.pca_data = self._computePCA()
@@ -57,7 +56,7 @@ class ManifoldSculpting():
             self.pca_data = np.copy(self.data)
 
         
-        self.save_checkpoint(self.folder, 0)
+        self.save_checkpoint(0)
 
         print(f"Starting manifold sculpting with {self.n_points} points and {self.n_neighbors} neighbors.\n")
         
@@ -70,7 +69,7 @@ class ManifoldSculpting():
             epoch += 1
 
             if epoch % checkpoint_interval == 0:
-                self.save_checkpoint(self.folder, epoch)
+                self.save_checkpoint(epoch)
         print(f"Heat up finished. Scale factor is now {self.scale_factor}.\n")
 
         print(f"Starting manifold sculpting\n")
@@ -92,17 +91,17 @@ class ManifoldSculpting():
             epoch += 1
             
             if epoch % checkpoint_interval == 0:
-                self.save_checkpoint(self.folder, epoch)
+                self.save_checkpoint(epoch)
 
         self.elapsed_epochs = epoch
         self.last_error = mean_error
 
         return self.pca_data
 
-    def save_checkpoint(self, folder: Path, epoch: int, basename: str = "checkpoint", extension: str = "npy"):
-        if self.save_checkpoints:
-            np.save(folder / f"{basename}_{epoch}.{extension}", self.pca_data)
-            print(f"Checkpoint saved at {folder / f'{basename}_{epoch}.{extension}'}\n")
+    def save_checkpoint(self, epoch: int, basename: str = "checkpoint", extension: str = "npy"):
+        if self.folder is not None:
+            np.save(self.folder / f"{basename}_{epoch:04d}.{extension}", self.pca_data)
+            print(f"Checkpoint saved at {self.folder / f'{basename}_{epoch}.{extension}'}\n")
 
     def _computeError(self, p_idx, visited) -> float:
         """Compute the error for the point p_idx
