@@ -29,22 +29,17 @@ CHECKPOINTS_DIR_NEXT := $(CHECKPOINTS_DIR)/$(CHECKPOINTS_TRIAL_BASENAME)$(NEXT_I
 
 PATHS_FILE = $(SRC_DIR)/paths.json
 
-.PHONY: config gendata run
+.PHONY: config gendata run sigma sizes neighs help
 
 config:
-	@echo "Configuring idx for checkpoints at path $(CHECKPOINTS_DIR)..."
-	@echo "greatest index is $(IDX)"
-	@echo "Creating directories..."
-	mkdir -p $(DATASET_DIR_3D)
-	mkdir -p $(DATASET_DIR_2D)
 	@echo "Creating paths file..."
 	@echo '{' > $(PATHS_FILE)
-	@echo '"dataset2d": "$(DATASET_DIR_2D)",' >> $(PATHS_FILE)
-	@echo '"dataset3d": "$(DATASET_DIR_3D)",' >> $(PATHS_FILE)
-	@echo '"checkpoints_next": "$(CHECKPOINTS_DIR_NEXT)",' >> $(PATHS_FILE)
-	@echo '"results_sizes": "$(RESULTS_DIR_SIZES)",' >> $(PATHS_FILE)
-	@echo '"results_neighbors": "$(RESULTS_DIR_NEIGHBORS)",' >> $(PATHS_FILE)
-	@echo '"results_scalefactors": "$(RESULTS_DIR_SCALEFACTORS)"' >> $(PATHS_FILE)
+	@echo '	"dataset2d": "$(DATASET_DIR_2D)",' >> $(PATHS_FILE)
+	@echo '	"dataset3d": "$(DATASET_DIR_3D)",' >> $(PATHS_FILE)
+	@echo '	"checkpoints_next": "$(CHECKPOINTS_DIR_NEXT)",' >> $(PATHS_FILE)
+	@echo '	"results_sizes": "$(RESULTS_DIR_SIZES)",' >> $(PATHS_FILE)
+	@echo '	"results_neighbors": "$(RESULTS_DIR_NEIGHBORS)",' >> $(PATHS_FILE)
+	@echo '	"results_scalefactors": "$(RESULTS_DIR_SCALEFACTORS)"' >> $(PATHS_FILE)
 	@echo '}' >> $(PATHS_FILE)
 
 gendata: config
@@ -54,3 +49,22 @@ gendata: config
 run: config
 	@echo "Running manifold sculpting..."
 	$(PYTHON) $(SRC_DIR)/run.py --paths $(PATHS_FILE)
+
+sigma: config
+	$(PYTHON) $(SRC_DIR)/mse_vs_sigma.py --paths $(PATHS_FILE)
+
+sizes: config
+	$(PYTHON) $(SRC_DIR)/mse_vs_sizes.py --paths $(PATHS_FILE)
+
+neighs: config
+	$(PYTHON) $(SRC_DIR)/mse_vs_neighbors.py --paths $(PATHS_FILE)
+
+help:
+	@echo "Makefile commands:"
+	@echo "  config   - Configure paths and directories"
+	@echo "  gendata  - Generate Swiss roll dataset"
+	@echo "  run      - Run manifold sculpting"
+	@echo "  sigma    - Run manifold sculpting vs sigma"
+	@echo "  sizes    - Run manifold sculpting vs dataset sizes"
+	@echo "  neighs   - Run manifold sculpting vs number of neighbors"
+	@echo "  help     - Show this help message"

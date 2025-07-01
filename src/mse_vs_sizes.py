@@ -1,7 +1,14 @@
+########################################
+##
+##  Check how the size of the dataset
+##  affects the performance of the
+##  manifold sculpting algorithm
+##
+########################################
+
 import numpy as np
 from sklearn.manifold import Isomap, LocallyLinearEmbedding
 import ManifoldSculpting as ms
-import os
 import time
 from pathlib import Path
 from utils import parse_paths
@@ -15,10 +22,9 @@ def main():
         raise FileNotFoundError(f"Data folder {data_folder} does not exist. Please provide a valid dataset path.")
 
     destination_folder = Path(paths["results_sizes"])
-
-    if not os.path.exists(destination_folder):
-        os.makedirs(destination_folder)
-
+    destination_folder.mkdir(parents=True, exist_ok=True)
+    
+    
     sizes = [250, 500, 1000, 2000, 4000]
     paths = [data_folder / f"N_{s}.npy" for s in sizes]
     if not all(path.exists() for path in paths):
