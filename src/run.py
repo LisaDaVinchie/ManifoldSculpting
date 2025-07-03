@@ -22,9 +22,7 @@ def main():
 
     if not destination_folder.parent.exists():
         raise FileNotFoundError(f"Destination folder {destination_folder.parent} does not exist. Please create it before running the script.")
-
     destination_folder.mkdir(parents=True, exist_ok=False)
-
 
     X = np.load(dataset_path)
     print(f"Loaded dataset from {dataset_path}")
@@ -32,13 +30,11 @@ def main():
     model = ms.ManifoldSculpting(n_neighbors=n_neighbors,
                                 n_components=n_components,
                                 iterations=n_iterations,
-                                max_iter_no_change=max_iter_no_change,)
+                                max_iter_no_change=max_iter_no_change)
 
-    X_MS = model.fit(X, save_checkpoints = True, folder = destination_folder, checkpoint_interval = save_every)
-
-    # last_epoch = model.elapsed_epochs
-
-    # np.save(destination_folder + f"checkpoint_{last_epoch}.npy", X_MS)
+    X_MS = model.fit(X, folder = destination_folder, checkpoint_interval = save_every)
+    
+    print(f"Manifold sculpting completed. Transformed data shape: {X_MS.shape}")
 
 if __name__ == "__main__":
     main()
