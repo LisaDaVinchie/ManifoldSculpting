@@ -18,6 +18,7 @@ RESULTS_DIR_SCALEFACTORS := $(RESULTS_DIR_SIZES)/scale_factors
 CHECKPOINTS_DIR := $(DATA_DIR)/checkpoints
 CHECKPOINTS_TRIAL_BASENAME := trial_
 CHECKPOINTS_FIG_DIR := $(FIG_DIR)/checkpoints
+GIFS_DIR := $(FIG_DIR)/gifs
 
 IDX := $(shell ls -d "$(CHECKPOINTS_DIR)/$(CHECKPOINTS_TRIAL_BASENAME)"* 2>/dev/null | \
         sed "s|.*$(CHECKPOINTS_TRIAL_BASENAME)||" | \
@@ -29,8 +30,8 @@ IDX ?= 0
 NEXT_IDX = $(shell echo $$(($(IDX) + 1)))
 CHECKPOINTS_DIR_CURRENT := $(CHECKPOINTS_DIR)/$(CHECKPOINTS_TRIAL_BASENAME)$(IDX)
 CHECKPOINTS_DIR_NEXT := $(CHECKPOINTS_DIR)/$(CHECKPOINTS_TRIAL_BASENAME)$(NEXT_IDX)
-CHECKPOINTS_FIG_DIR_NEXT := $(CHECKPOINTS_FIG_DIR)/$(CHECKPOINTS_TRIAL_BASENAME)$(NEXT_IDX)
-
+CHECKPOINTS_FIG_DIR := $(CHECKPOINTS_FIG_DIR)/$(CHECKPOINTS_TRIAL_BASENAME)$(IDX)
+GIFS_PATH := $(GIFS_DIR)/$(CHECKPOINTS_TRIAL_BASENAME)$(IDX).gif
 PATHS_FILE = $(SRC_DIR)/paths.json
 
 .PHONY: config gendata run sigma sizes neighs gif help
@@ -42,7 +43,8 @@ config:
 	@echo '	"dataset3d": "$(DATASET_DIR_3D)",' >> $(PATHS_FILE)
 	@echo '	"checkpoints": "$(CHECKPOINTS_DIR_CURRENT)",' >> $(PATHS_FILE)
 	@echo '	"checkpoints_next": "$(CHECKPOINTS_DIR_NEXT)",' >> $(PATHS_FILE)
-	@echo '	"checkpoints_fig_next": "$(CHECKPOINTS_FIG_DIR_NEXT)",' >> $(PATHS_FILE)
+	@echo '	"checkpoints_fig_next": "$(CHECKPOINTS_FIG_DIR)",' >> $(PATHS_FILE)
+	@echo '	"gif_path": "$(GIFS_PATH)",' >> $(PATHS_FILE)
 	@echo '	"results_sizes": "$(RESULTS_DIR_SIZES)",' >> $(PATHS_FILE)
 	@echo '	"results_neighbors": "$(RESULTS_DIR_NEIGHBORS)",' >> $(PATHS_FILE)
 	@echo '	"results_scalefactors": "$(RESULTS_DIR_SCALEFACTORS)"' >> $(PATHS_FILE)
