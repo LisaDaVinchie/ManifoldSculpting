@@ -1,6 +1,10 @@
 # Data folder
-data/
-figs/
+data/checkpoints/*
+data/datasets/*
+data/results/*
+figs/checkpoints/*
+figs/gifs/*
+figs/data_analysis/*
 
 # Paths file
 src/paths.json
