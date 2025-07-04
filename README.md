@@ -38,4 +38,16 @@ All the codes can be compiled using the makefile command `make <command>` from t
 
  ## Results
  
-![gif not found](figs/markdown/trial_1.gif)
+ To validate the dataset and test its efficiency againts the theorethical result and against other methods.
+
+### Pro
+ - Accurate even with a small density of points (250 in the picture) ![no pic found](figs/markdown/proj_250.png)
+ - Number of neighbors is not that influential on the result ![no pic found](figs/markdown/mse_vs_nn.png)
+
+### Cons
+
+- Slow ![no pic found](figs/markdown/time_vs_nn.png)
+- Many hyperparameters to choose 
+- Must be rotated to align with the XY plane
+
+The full process can be appreciated in the following gif: ![no gif found](figs/markdown/trial_1.gif)
