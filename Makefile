@@ -37,6 +37,14 @@ PATHS_FILE = $(SRC_DIR)/paths.json
 .PHONY: config gendata run sigma sizes neighs gif help
 
 config:
+	@mkdir -p $(DATASET_DIR_2D)
+	@mkdir -p $(DATASET_DIR_3D)
+	@mkdir -p $(CHECKPOINTS_DIR)
+	@mkdir -p $(CHECKPOINTS_FIG_DIR)
+	@mkdir -p $(GIFS_DIR)
+	@mkdir -p $(RESULTS_DIR_SIZES)
+	@mkdir -p $(RESULTS_DIR_NEIGHBORS)
+	@mkdir -p $(RESULTS_DIR_SCALEFACTORS)
 	@echo "Creating paths file..."
 	@echo '{' > $(PATHS_FILE)
 	@echo '	"dataset2d": "$(DATASET_DIR_2D)",' >> $(PATHS_FILE)
@@ -76,6 +84,7 @@ help:
 	@echo "  config   - Configure paths and directories"
 	@echo "  gendata  - Generate Swiss roll dataset"
 	@echo "  run      - Run manifold sculpting"
+	@echo "  gif      - Generate GIF from checkpoints"
 	@echo "  sigma    - Run manifold sculpting vs sigma"
 	@echo "  sizes    - Run manifold sculpting vs dataset sizes"
 	@echo "  neighs   - Run manifold sculpting vs number of neighbors"
