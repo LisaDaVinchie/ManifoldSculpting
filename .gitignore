@@ -6,16 +6,6 @@ figs/checkpoints/*
 figs/gifs/*
 figs/data_analysis/*
 
-# Paths file
-src/paths.json
-
-# Ignore system specific files
-.DS_Store
-*/.DS_Store
-
-# The virtual environment
-*venv*/
-
 # Local system files
 **/.DS_Store
 
