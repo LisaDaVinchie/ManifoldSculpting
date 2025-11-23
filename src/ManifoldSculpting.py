@@ -1,7 +1,6 @@
 import numpy as np
 from collections import deque
 from pathlib import Path
-import matplotlib.pyplot as plt
 
 class ManifoldSculpting():
 
