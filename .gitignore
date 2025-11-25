@@ -6,6 +6,9 @@ figs/checkpoints/*
 figs/gifs/*
 figs/data_analysis/*
 
+# Venv files
+*venv*/
+
 # Local system files
 **/.DS_Store
 
