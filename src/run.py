@@ -4,10 +4,6 @@ from generate_gif import generate_gif
 from pathlib import Path
 
 def main():
-    dataset_folder = Path("./data/datasets/") # Folder to save/load datasets
-    checkpoint_folder = Path("./data/checkpoints/") # Folder to save checkpoints
-    figs_subfolder = "figs/"
-    
     N = 800  # Number of points in the dataset
     n_neighbors = 10  # Number of neighbors for the manifold sculpting algorithm
     n_components = 2  # Number of components for the manifold sculpting algorithm
@@ -15,6 +11,10 @@ def main():
     n_iterations = 100  # Total number of iterations for the algorithm
     save_every = 10  # Save every n iterations
     generate_gif_flag = True  # Whether to generate a GIF of the evolution
+    
+    dataset_folder = Path("./data/datasets/") # Folder to save/load datasets
+    checkpoint_folder = Path("./data/checkpoints/") # Folder to save checkpoints
+    figs_subfolder = "figs/"
 
     print("Generating swiss roll dataset...")
     swissroll = swissRoll(N)
