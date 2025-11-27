@@ -19,7 +19,7 @@ class ManifoldSculpting():
         """
         self.n_neighbors = n_neighbors
         self.n_components = n_components
-        self.iterations = iterations
+        self.n_iterations = iterations
         self.sigma = sigma
         self.rotate = perform_pca
 
@@ -27,14 +27,15 @@ class ManifoldSculpting():
 
         self.max_iter_no_change = max_iter_no_change
 
-    def fit(self, data: np.ndarray, folder: Path = None, checkpoint_interval = 10, figs_subfolder: str = "figs", savefig: bool = False) -> np.ndarray:
+    def fit(self, data: np.ndarray, folder: Path = "./", figs_subfolder: str = "figs", checkpoint_interval = 10, scale_factor_threshold: float = 0.01, savefig: bool = False) -> np.ndarray:
         """Pass the dataset to transform it into a lower dimension
 
         Args:
             data (np.ndarray): dataset to transfrom, made as a matrix of shape (n_samples, n_features)
-            folder (str, optional): Where to save the checkpoints. Defaults to ''.
-            checkpoint_interval (int, optional): number of epochs between one checkpoint and another one. Defaults to 10.
+            folder (str, optional): Where to save the checkpoints. Defaults to './'.
             figs_subfolder (str, optional): subfolder to save the figures. Defaults to "figs".
+            checkpoint_interval (int, optional): number of epochs between one checkpoint and another one. Defaults to 10.
+            scale_factor_threshold (float, optional): scale factor threshold to finish the heat up phase. Defaults to 0.01.
             savefig (bool, optional): whether to save the figures or not. Defaults to False
 
         Returns:
@@ -43,14 +44,20 @@ class ManifoldSculpting():
         self.data = data
         self.folder = folder
         self.n_points = self.data.shape[0]
-        self.neighbours, self.distances0, self.avg_dist0= u.findKNN(self.data, self.n_neighbors)
-        self.mcn_index, self.mcn_angles = u.findMCN(self.data, self.neighbours, self.n_neighbors)
+        self.savefig = savefig
+        
+        self.figs_folder = folder / figs_subfolder
+        
+        # Initialise KNN and MCN
+        self.neighbours, self.distances0, self.avg_dist0= u.find_KNN(self.data, self.n_neighbors)
+        self.mcn_index, self.mcn_angles = u.find_MCN(self.data, self.neighbours, self.n_neighbors)
+        
         self.learning_rate = self.avg_dist0
 
         if self.rotate:
-            self.pca_data = u.computePCA(self.data)
-            self.d_pres = np.arange(self.n_components,dtype=np.int32)
-            self.d_scal = np.arange(self.n_components, self.data.shape[1],dtype=np.int32)
+            self.pca_data = u.compute_PCA(self.data)
+            self.d_pres = np.arange(self.n_components, dtype=np.int32)
+            self.d_scal = np.arange(self.n_components, self.data.shape[1], dtype=np.int32)
         else:
             cov = np.cov(self.data.T)
             most_important = np.argsort(-np.diag(cov)).astype(np.int32)
@@ -58,30 +65,27 @@ class ManifoldSculpting():
             self.d_scal = most_important[self.n_components:]
             self.pca_data = np.copy(self.data)
 
-        self.save_checkpoint(0, fig_subfolder=figs_subfolder, savefig=savefig)
+        # Save initial state
+        self.save_checkpoint(0)
+        
+        # Initialize epoch counter
+        self.epoch: int = 1
 
         print(f"Starting manifold sculpting with {self.n_points} points and {self.n_neighbors} neighbors.\n")
         
         print(f"Starting heat up with scale factor {self.scale_factor}.\n")
-        epoch = 1
-        while self.scale_factor > 0.01:
-            if epoch % checkpoint_interval == 0:
-                print(f"Epoch {epoch}, scale factor: {self.scale_factor}")
-            mean_error = self._step()
-            epoch += 1
-
-            if epoch % checkpoint_interval == 0:
-                self.save_checkpoint(epoch, fig_subfolder=figs_subfolder, savefig=savefig)
-        print(f"Heat up finished. Scale factor is now {self.scale_factor}.\n")
+        mean_error = self._heat_up(checkpoint_interval, scale_factor_threshold, figs_subfolder, savefig)
+        print(f"Heat up finished in {self.epoch} epochs. Scale factor is now {self.scale_factor}.\n")
 
         print(f"Starting manifold sculpting\n")
         epochs_since_improvement = 0
         best_error = np.inf
-        while (epoch < self.iterations) and (epochs_since_improvement < self.max_iter_no_change):
-            if epoch % checkpoint_interval == 0:
-                print(f"Epoch {epoch}, mean error: {mean_error}, best error: {best_error}, epochs since improvement: {epochs_since_improvement}")
+        
+        while (self.epoch < self.n_iterations) and (epochs_since_improvement < self.max_iter_no_change):
+            print(f"Epoch {self.epoch}...")
             mean_error = self._step()
 
+            # If the error improved, save the best state. Otherwise, increase the counter
             if mean_error < best_error:
                 best_error = mean_error
                 self.best_data = np.copy(self.pca_data)
@@ -89,29 +93,42 @@ class ManifoldSculpting():
                 epochs_since_improvement = 0
             else:
                 epochs_since_improvement += 1
-
-            epoch += 1
+                
+            if self.epoch % checkpoint_interval == 0:
+                print(f"Mean error: {mean_error}, best error: {best_error}, epochs since improvement: {epochs_since_improvement}")
             
-            if epoch % checkpoint_interval == 0:
-                self.save_checkpoint(epoch, fig_subfolder=figs_subfolder, savefig=savefig)
+            if self.epoch % checkpoint_interval == 0:
+                self.save_checkpoint(self.epoch)
+                
+            self.epoch += 1
+            print()
 
-        self.elapsed_epochs = epoch
+        self.elapsed_epochs = self.epoch
         self.last_error = mean_error
 
         return self.pca_data
 
-    def save_checkpoint(self, epoch: int, basename: str = "checkpoint", extension: str = "npy", savefig: bool = False, fig_subfolder: str = "figs", fig_extension: str = "png"):
-        if self.folder is not None:
-            filename = f"{basename}_{epoch:04d}"
-            np.save(self.folder / filename, self.pca_data)
-            print(f"Checkpoint saved at {self.folder / f'{filename}.{extension}'}")
-            
-            if savefig:
-                fig_folder = self.folder / fig_subfolder
-                fig_folder.mkdir(parents=True, exist_ok=True)
-                self.plot_checkpoint(self.pca_data, fig_folder / f"{filename}.{fig_extension}")
-                print(f"Figure saved at {fig_folder / f'{filename}.{fig_extension}'}")
-            print()
+    def _heat_up(self, checkpoint_interval, scale_factor_threshold, figs_subfolder, savefig):
+        while self.scale_factor > scale_factor_threshold:
+            if self.epoch % checkpoint_interval == 0:
+                print(f"Epoch {self.epoch}, scale factor: {self.scale_factor}")
+            mean_error = self._step()
+            self.epoch += 1
+
+            if self.epoch % checkpoint_interval == 0:
+                self.save_checkpoint(self.epoch, fig_subfolder=figs_subfolder)
+        return mean_error
+
+    def save_checkpoint(self, epoch: int, basename: str = "checkpoint", extension: str = "npy", fig_extension: str = "png"):
+        filename = f"{basename}_{epoch:04d}"
+        np.save(self.folder / filename, self.pca_data)
+        print(f"Checkpoint saved at {self.folder / f'{filename}.{extension}'}")
+        
+        if self.savefig:
+            self.figs_folder.mkdir(parents=True, exist_ok=True)
+            figpath = self.figs_folder / f"{filename}.{fig_extension}"
+            self.plot_checkpoint(self.pca_data, figpath)
+            print(f"Figure saved at {figpath}")
             
     def plot_checkpoint(self, X: np.ndarray, filepath: str):
         """Plot the current space and save it to filepath
@@ -130,7 +147,7 @@ class ManifoldSculpting():
         plt.close()
         
 
-    def _computeError(self, p_idx, visited) -> float:
+    def _compute_error(self, p_idx, visited) -> float:
         """Compute the error for the point p_idx
 
         Args:
@@ -164,7 +181,7 @@ class ManifoldSculpting():
         
         return total_err
     
-    def _averageNeighborDistance(self) -> float:
+    def _average_neighbor_distance(self) -> float:
         """Computes the average distance between each point and its neighbors
 
         Returns:
@@ -176,11 +193,11 @@ class ManifoldSculpting():
             p = self.pca_data[p_idx]
             for n in self.neighbours[p_idx]:
                 count += 1
-                dist += np.linalg.norm(p-self.pca_data[n])
+                dist += np.linalg.norm(p - self.pca_data[n])
         dist /= count
         return dist
     
-    def _adjustPoint(self, p, visited) -> tuple[int, float]:
+    def _adjust_point(self, p, visited) -> tuple[int, float]:
         """Adjust the point p in the dataset
 
         Args:
@@ -194,7 +211,7 @@ class ManifoldSculpting():
         lr = self.learning_rate
         improved = True
 
-        err = self._computeError(p,visited)
+        err = self._compute_error(p, visited)
         s = 0
         while (s<30) and improved:
             s+=1
@@ -202,11 +219,11 @@ class ManifoldSculpting():
 
             for d in self.d_pres:
                 self.pca_data[p,d] += lr
-                newerr = self._computeError(p,visited)
+                newerr = self._compute_error(p, visited)
 
                 if newerr >= err:
                     self.pca_data[p,d] -= 2*lr
-                    newerr = self._computeError(p,visited)
+                    newerr = self._compute_error(p, visited)
                 
                     if newerr >= err:
                         self.pca_data[p,d] += lr
@@ -235,7 +252,7 @@ class ManifoldSculpting():
        
         self.pca_data[:,self.d_scal] *= self.sigma
         
-        while self._averageNeighborDistance() < self.avg_dist0:
+        while self._average_neighbor_distance() < self.avg_dist0:
             self.pca_data[:,self.d_pres] /= self.sigma
 
 
@@ -250,7 +267,7 @@ class ManifoldSculpting():
             
             q.extend(self.neighbours[p_idx, :])
 
-            s,err = self._adjustPoint(p_idx,visited)
+            s,err = self._adjust_point(p_idx,visited)
             step += s
             mean_error += err
             counter += 1
