@@ -2,6 +2,7 @@ import numpy as np
 from collections import deque
 from pathlib import Path
 import matplotlib.pyplot as plt
+import utils as u
 
 class ManifoldSculpting():
 
@@ -47,7 +48,7 @@ class ManifoldSculpting():
         self.learning_rate = self.avg_dist0
 
         if self.rotate:
-            self.pca_data = self._computePCA()
+            self.pca_data = u.computePCA(self.data)
             self.d_pres = np.arange(self.n_components,dtype=np.int32)
             self.d_scal = np.arange(self.n_components, self.data.shape[1],dtype=np.int32)
         else:
@@ -223,20 +224,7 @@ class ManifoldSculpting():
                 mcn_idx[i,j] = neighbors[n_idx,index]
                 mcn_angle[i,j] = angles[index]
 
-        return mcn_idx, mcn_angle    
-    
-    def _computePCA(self) -> np.ndarray:
-        """Compute the kernel PCA of the dataset
-
-        Returns:
-            MatrixLike: dataset transformed with PCA
-        """
-        cov = np.cov(self.data.T)
-        eigval,eig = np.linalg.eig(cov)
-        index = np.argsort(-eigval)
-        eigvec = np.copy(eig[:,index].astype(np.float32))
-
-        return self.data@eigvec
+        return mcn_idx, mcn_angle
     
     def _averageNeighborDistance(self) -> float:
         """Computes the average distance between each point and its neighbors
