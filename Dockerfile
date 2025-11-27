@@ -10,5 +10,6 @@ COPY src/run.py ./src/
 COPY src/ManifoldSculpting.py ./src/
 COPY src/dataset_generation.py ./src/
 COPY src/generate_gif.py ./src/
+COPY src/utils.py ./src/
 
 CMD ["python3", "-u", "src/run.py"]
