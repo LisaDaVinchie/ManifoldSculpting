@@ -1,6 +1,6 @@
 import numpy as np
 
-def computePCA(data) -> np.ndarray:
+def compute_PCA(data) -> np.ndarray:
     """Compute the kernel PCA of the dataset
     Args:
         data (np.ndarray): The dataset to compute the PCA on
@@ -14,7 +14,7 @@ def computePCA(data) -> np.ndarray:
 
     return data@eigvec
 
-def findKNN(data: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray, float]:
+def find_KNN(data: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray, float]:
     """Calculate the K nearest neighbors for each point in the dataset and their distances from the point
 
     Args:
@@ -43,7 +43,7 @@ def findKNN(data: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray,
 
     return neighbors, distances, average_dist
     
-def findMCN(data: np.ndarray, neighbors: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray]:
+def find_MCN(data: np.ndarray, neighbors: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray]:
     """Find most collinear neighbors for each point in the dataset
 
     Args:
