@@ -41,18 +41,33 @@ class swissRoll:
 
         return dataset
     
-    def save(self, dataset: np.ndarray, folder: Path):
-        folder.mkdir(parents=True, exist_ok=True)
-        np.save(folder / f'N_{self.N}.npy', dataset)
+    def save(self, filename: Path, dataset: np.ndarray) -> None:
+        np.save(filename, dataset)
     
-    def generate_and_save(self, folder2d: Path, folder3d: Path):
+    def generate_and_save(self, dataset_folder: Path, overwrite: bool = False, subfolder_2d: str = "2d", subfolder_3d: str = "3d", file_name_prefix: str = "N"):
         """Saves the generated datasets to the specified folder.
 
         Args:
             folder (Path): folder to save the datasets.
+            overwrite (bool, optional): whether to overwrite existing files. Defaults to False.
+            subfolder_2d (str, optional): subfolder name for 2D dataset. Defaults to "2d".
+            subfolder_3d (str, optional): subfolder name for 3D dataset. Defaults to "3d".
+            file_name_prefix (str, optional): prefix for the saved file names. Defaults to "N".
         """
+
+        folder3d = dataset_folder / subfolder_3d
+        folder2d = dataset_folder / subfolder_2d
+        folder3d.mkdir(parents=True, exist_ok=True)
+        folder2d.mkdir(parents=True, exist_ok=True)
+        filename_3d = folder3d / f'{file_name_prefix}_{self.N}.npy'
+        filename_2d = folder2d / f'{file_name_prefix}_{self.N}.npy'
+        
+        if not overwrite and filename_3d.exists() and filename_2d.exists():
+            print(f"Files {filename_3d} and {filename_2d} already exist. Skipping generation.")
+            return
+        
         swissroll3D = self.generate3D()
         swissroll2D = self.generate2D()
-
-        np.save(folder3d / f'N_{self.N}.npy', swissroll3D)
-        np.save(folder2d / f'N_{self.N}.npy', swissroll2D)
+        
+        self.save(filename_3d, swissroll3D)
+        self.save(filename_2d, swissroll2D)
