@@ -1,5 +1,6 @@
 import ManifoldSculpting as ms
 from dataset_generation import swissRoll
+from generate_gif import generate_gif
 from pathlib import Path
 
 def main():
@@ -14,6 +15,7 @@ def main():
     max_iter_no_change = 50  # Maximum iterations without change
     n_iterations = 100  # Total number of iterations for the algorithm
     save_every = 10  # Save every n iterations
+    generate_gif_flag = True  # Whether to generate a GIF of the evolution
 
     print("Generating swiss roll dataset...")
     swissroll = swissRoll(N)
@@ -34,8 +36,18 @@ def main():
                                 iterations=n_iterations,
                                 max_iter_no_change=max_iter_no_change)
 
-    X_MS = model.fit(X_3d, folder = destination_folder, checkpoint_interval = save_every)
-    print(f"Manifold sculpting completed. Transformed data shape: {X_MS.shape}")
+    X_MS = model.fit(X_3d, folder = destination_folder, checkpoint_interval = save_every, figs_subfolder=figs_subfolder, savefig=generate_gif_flag)
+    print(f"Manifold sculpting completed. Transformed data shape: {X_MS.shape}\n")
+    
+    if generate_gif_flag:
+        try:
+            print("Generating GIF from saved figures...")
+            fig_paths = sorted(figs_folder.glob("*.png"))
+            gif_path = destination_folder / "evolution.gif"
+            generate_gif(gif_path, fig_paths)
+            print("GIF generation completed.")
+        except Exception as e:
+            print(f"An error occurred while generating the GIF: {e}")
 
 def find_next_available_index(checkpoint_folder: Path, file_name: str = "trial") -> Path:
     checkpoint_folder.mkdir(parents=True, exist_ok=True)
