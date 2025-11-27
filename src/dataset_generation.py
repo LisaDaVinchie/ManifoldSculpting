@@ -1,25 +1,6 @@
 import numpy as np
 from pathlib import Path
-from utils import parse_paths
 
-def main():
-    N_points = [250, 300, 400, 500, 600, 700, 800, 1000, 2000]
-        
-    paths = parse_paths()
-
-    data_folder_2d = Path(paths["dataset2d"])
-    data_folder_3d = Path(paths["dataset3d"])
-    data_folder_2d.mkdir(parents=True, exist_ok=True)
-    data_folder_3d.mkdir(parents=True, exist_ok=True)
-
-    for N in N_points:
-        swissroll = swissRoll(N)
-        swissroll3D = swissroll.generate3D()
-        swissroll2D = swissroll.generate2D()
-
-        np.save(data_folder_3d / f'N_{N}.npy', swissroll3D)
-        np.save(data_folder_2d / f'N_{N}.npy', swissroll2D)
-        
 class swissRoll:
     def __init__(self, N: int):
         """Initializes the swiss roll dataset generator.
@@ -60,6 +41,18 @@ class swissRoll:
 
         return dataset
     
-if __name__ == '__main__':
-    main()
-    print('Swiss roll dataset generated successfully.')
+    def save(self, dataset: np.ndarray, folder: Path):
+        folder.mkdir(parents=True, exist_ok=True)
+        np.save(folder / f'N_{self.N}.npy', dataset)
+    
+    def generate_and_save(self, folder2d: Path, folder3d: Path):
+        """Saves the generated datasets to the specified folder.
+
+        Args:
+            folder (Path): folder to save the datasets.
+        """
+        swissroll3D = self.generate3D()
+        swissroll2D = self.generate2D()
+
+        np.save(folder3d / f'N_{self.N}.npy', swissroll3D)
+        np.save(folder2d / f'N_{self.N}.npy', swissroll2D)
