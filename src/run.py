@@ -4,8 +4,7 @@ from generate_gif import generate_gif
 from pathlib import Path
 
 def main():
-    data_folder_3d = Path("./data/datasets/3d/")
-    data_folder_2d = Path("./data/datasets/2d/")
+    dataset_folder = Path("./data/datasets/")
     checkpoint_folder = Path("./data/checkpoints/")
     figs_subfolder = "figs/"
     
@@ -19,10 +18,7 @@ def main():
 
     print("Generating swiss roll dataset...")
     swissroll = swissRoll(N)
-    X_3d = swissroll.generate3D()
-    X_2d = swissroll.generate2D()
-    swissroll.save(X_3d, data_folder_3d)
-    swissroll.save(X_2d, data_folder_2d)
+    X_3d, _ = swissroll.generate_and_save(dataset_folder=dataset_folder, overwrite=False)
     print(f"Swiss roll dataset with {N} points generated and saved.\n")
     
     destination_folder = find_next_available_index(checkpoint_folder)
