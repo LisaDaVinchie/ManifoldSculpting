@@ -83,8 +83,8 @@ def find_MCN(data: np.ndarray, neighbors: np.ndarray, n_neighbors: int) -> tuple
 
     return mcn_idx, mcn_angle
 
-def averageNeighborDistance(self, data: np.ndarray, neighbors: np.ndarray, n_points: int) -> float:
-    """Computes the average distance between each point and its neighbors
+def average_neighbor_distance(data: np.ndarray, neighbors: np.ndarray, n_points: int) -> float:
+    """Computes the average distance between each point and its neighbors.
     Args:
         data (np.ndarray): The dataset
         neighbors (np.ndarray): The neighbors for each point
@@ -93,6 +93,7 @@ def averageNeighborDistance(self, data: np.ndarray, neighbors: np.ndarray, n_poi
     Returns:
         float: average distance between each point and its neighbors
     """
+    
     dist = 0
     count = 0
     for p_idx in range(n_points):
