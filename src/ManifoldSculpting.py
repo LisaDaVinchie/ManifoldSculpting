@@ -1,6 +1,7 @@
 import numpy as np
 from collections import deque
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 class ManifoldSculpting():
 
@@ -25,13 +26,15 @@ class ManifoldSculpting():
 
         self.max_iter_no_change = max_iter_no_change
 
-    def fit(self, data: np.ndarray, folder: Path = None, checkpoint_interval = 10) -> np.ndarray:
+    def fit(self, data: np.ndarray, folder: Path = None, checkpoint_interval = 10, figs_subfolder: str = "figs", savefig: bool = False) -> np.ndarray:
         """Pass the dataset to transform it into a lower dimension
 
         Args:
             data (np.ndarray): dataset to transfrom, made as a matrix of shape (n_samples, n_features)
             folder (str, optional): Where to save the checkpoints. Defaults to ''.
             checkpoint_interval (int, optional): number of epochs between one checkpoint and another one. Defaults to 10.
+            figs_subfolder (str, optional): subfolder to save the figures. Defaults to "figs".
+            savefig (bool, optional): whether to save the figures or not. Defaults to False
 
         Returns:
             MatrixLike: transformed dataset
@@ -54,8 +57,7 @@ class ManifoldSculpting():
             self.d_scal = most_important[self.n_components:]
             self.pca_data = np.copy(self.data)
 
-        
-        self.save_checkpoint(0)
+        self.save_checkpoint(0, fig_subfolder=figs_subfolder, savefig=savefig)
 
         print(f"Starting manifold sculpting with {self.n_points} points and {self.n_neighbors} neighbors.\n")
         
@@ -68,7 +70,7 @@ class ManifoldSculpting():
             epoch += 1
 
             if epoch % checkpoint_interval == 0:
-                self.save_checkpoint(epoch)
+                self.save_checkpoint(epoch, fig_subfolder=figs_subfolder, savefig=savefig)
         print(f"Heat up finished. Scale factor is now {self.scale_factor}.\n")
 
         print(f"Starting manifold sculpting\n")
@@ -90,17 +92,41 @@ class ManifoldSculpting():
             epoch += 1
             
             if epoch % checkpoint_interval == 0:
-                self.save_checkpoint(epoch)
+                self.save_checkpoint(epoch, fig_subfolder=figs_subfolder, savefig=savefig)
 
         self.elapsed_epochs = epoch
         self.last_error = mean_error
 
         return self.pca_data
 
-    def save_checkpoint(self, epoch: int, basename: str = "checkpoint", extension: str = "npy"):
+    def save_checkpoint(self, epoch: int, basename: str = "checkpoint", extension: str = "npy", savefig: bool = False, fig_subfolder: str = "figs", fig_extension: str = "png"):
         if self.folder is not None:
-            np.save(self.folder / f"{basename}_{epoch:04d}.{extension}", self.pca_data)
-            print(f"Checkpoint saved at {self.folder / f'{basename}_{epoch}.{extension}'}\n")
+            filename = f"{basename}_{epoch:04d}"
+            np.save(self.folder / filename, self.pca_data)
+            print(f"Checkpoint saved at {self.folder / f'{filename}.{extension}'}\n")
+            
+            if savefig:
+                fig_folder = self.folder / fig_subfolder
+                fig_folder.mkdir(parents=True, exist_ok=True)
+                self.plot_checkpoint(self.pca_data, fig_folder / f"{filename}.{fig_extension}")
+                print(f"Figure saved at {fig_folder / f'{filename}.{fig_extension}'}\n")
+            
+    def plot_checkpoint(self, X: np.ndarray, filepath: str):
+        """Plot the current space and save it to filepath
+
+        Args:
+            X (np.ndarray): the current space, as 3d numpy ndarray
+            filepath (str): path to the saved image
+        """
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111, projection='3d')
+
+        ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=X[:, 1])
+
+        plt.savefig(filepath)
+
+        plt.close()
+        
 
     def _computeError(self, p_idx, visited) -> float:
         """Compute the error for the point p_idx
