@@ -181,40 +181,26 @@ class ManifoldSculpting():
         
         return total_err
     
-    def _average_neighbor_distance(self) -> float:
-        """Computes the average distance between each point and its neighbors
-
-        Returns:
-            float: average distance between each point and its neighbors
-        """
-        dist = 0
-        count = 0
-        for p_idx in range(self.n_points):
-            p = self.pca_data[p_idx]
-            for n in self.neighbours[p_idx]:
-                count += 1
-                dist += np.linalg.norm(p - self.pca_data[n])
-        dist /= count
-        return dist
-    
-    def _adjust_point(self, p, visited) -> tuple[int, float]:
-        """Adjust the point p in the dataset
+    def _adjust_point(self, p: int, visited: list[int], s_threshold: int = 30) -> tuple[int, float]:
+        """Adjust the point p in the dataset until no improvement is found or the step threshold is reached.
 
         Args:
             p (int): index of the point to adjust
             visited (list): list of points that were already adjusted in this step
+            s_threshold (int, optional): maximum number of steps to adjust the point. Defaults to 30.
 
         Returns:
             int: steps taken to adjust the point p
             float: error for the point p
         """
+        
         lr = self.learning_rate
         improved = True
 
         err = self._compute_error(p, visited)
         s = 0
-        while (s<30) and improved:
-            s+=1
+        while (s < s_threshold) and improved:
+            s += 1
             improved = False
 
             for d in self.d_pres:
@@ -222,18 +208,18 @@ class ManifoldSculpting():
                 newerr = self._compute_error(p, visited)
 
                 if newerr >= err:
-                    self.pca_data[p,d] -= 2*lr
+                    self.pca_data[p,d] -= 2 * lr
                     newerr = self._compute_error(p, visited)
                 
                     if newerr >= err:
-                        self.pca_data[p,d] += lr
+                        self.pca_data[p, d] += lr
                     else:
                         err = newerr
                         improved = True
                 else:
                     err = newerr
                     improved = True
-        return s-1, err
+        return s - 1, err
     
     def _step(self) -> float:
         """Manifold sculpting step
@@ -252,9 +238,10 @@ class ManifoldSculpting():
        
         self.pca_data[:,self.d_scal] *= self.sigma
         
-        while self._average_neighbor_distance() < self.avg_dist0:
+        dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
+        while dist < self.avg_dist0:
             self.pca_data[:,self.d_pres] /= self.sigma
-
+            dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
 
         step = 0
         mean_error = 0
