@@ -4,8 +4,8 @@ from generate_gif import generate_gif
 from pathlib import Path
 
 def main():
-    dataset_folder = Path("./data/datasets/")
-    checkpoint_folder = Path("./data/checkpoints/")
+    dataset_folder = Path("./data/datasets/") # Folder to save/load datasets
+    checkpoint_folder = Path("./data/checkpoints/") # Folder to save checkpoints
     figs_subfolder = "figs/"
     
     N = 800  # Number of points in the dataset
