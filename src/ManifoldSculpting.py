@@ -43,8 +43,8 @@ class ManifoldSculpting():
         self.data = data
         self.folder = folder
         self.n_points = self.data.shape[0]
-        self.neighbours, self.distances0, self.avg_dist0= self._findKNN()
-        self.mcn_index, self.mcn_angles = self._findMCN(self.data, self.neighbours)
+        self.neighbours, self.distances0, self.avg_dist0= u.findKNN(self.data, self.n_neighbors)
+        self.mcn_index, self.mcn_angles = u.findMCN(self.data, self.neighbours, self.n_neighbors)
         self.learning_rate = self.avg_dist0
 
         if self.rotate:
@@ -104,13 +104,14 @@ class ManifoldSculpting():
         if self.folder is not None:
             filename = f"{basename}_{epoch:04d}"
             np.save(self.folder / filename, self.pca_data)
-            print(f"Checkpoint saved at {self.folder / f'{filename}.{extension}'}\n")
+            print(f"Checkpoint saved at {self.folder / f'{filename}.{extension}'}")
             
             if savefig:
                 fig_folder = self.folder / fig_subfolder
                 fig_folder.mkdir(parents=True, exist_ok=True)
                 self.plot_checkpoint(self.pca_data, fig_folder / f"{filename}.{fig_extension}")
-                print(f"Figure saved at {fig_folder / f'{filename}.{fig_extension}'}\n")
+                print(f"Figure saved at {fig_folder / f'{filename}.{fig_extension}'}")
+            print()
             
     def plot_checkpoint(self, X: np.ndarray, filepath: str):
         """Plot the current space and save it to filepath
@@ -162,69 +163,6 @@ class ManifoldSculpting():
         total_err = np.sum(w * (err_dist**2 + err_theta**2))
         
         return total_err
-
-    def _findKNN(self) -> tuple[np.ndarray, np.ndarray, float]:
-        """Calculate the K nearest neighbors for each point in the dataset and their distances from the point
-
-        Returns:
-            MatrixLike: indexes of the K nearest neighbors for each point
-            MatrixLike: distances of the K nearest neighbors for each point
-            float: average distance between neighbors
-        """
-        N = self.data.shape[0]
-       
-        x2 = np.sum(self.data*self.data,axis = 1)
-        data_t = np.copy(self.data.T)
-        xx = self.data@data_t
-        dist = np.sqrt(np.abs(x2.reshape((-1,1))-2*xx+x2))
-
-        _neigh = np.zeros((N,self.n_neighbors),dtype=np.int32)
-        _dist = np.zeros((N,self.n_neighbors),dtype=np.float32)
-        for i in range(N):
-            _neigh[i] = np.argsort(dist[i])[1:self.n_neighbors+1]
-            _dist[i,:] = dist[i,_neigh[i]]
-        _ave_dist = np.mean(_dist)
-
-        return _neigh, _dist, _ave_dist
-    
-    def _findMCN(self, data, neighbors) -> tuple[np.ndarray, np.ndarray]:
-        """Find most collinear neighbors for each point in the dataset
-
-        Args:
-            data (MatrixLike): datset of shape (n_samples, n_features)
-            neighbors (MatrixLike): matrix of indexes of the K nearest neighbors for each point
-
-        Returns:
-            MatrixLike: indexes of the most collinear neighbors for each point
-            MatrixLike: angles between the point and the most collinear neighbors
-        """
-        N = data.shape[0]
-        mcn_idx = np.zeros((N,self.n_neighbors),dtype=np.int32)
-        mcn_angle = np.zeros((N,self.n_neighbors),dtype=np.float32)
-        
-        for i in range(N):
-
-            p = self.data[i, :]
-
-            for j, n_idx in enumerate(neighbors[i]):
-                n = self.data[n_idx, :]
-                pn = p - n
-                pn_dist = np.linalg.norm(pn)
-
-                nm = self.data[neighbors[n_idx]] - n
-                nm_dist = np.linalg.norm(nm, axis=1)
-
-                cosines = np.sum(pn * nm, axis=1) / (pn_dist * nm_dist)
-                cosines = np.clip(cosines, -1, 1)
-
-                angles = np.arccos(cosines)
-
-                index = np.argmin(np.abs(angles-np.pi))
-
-                mcn_idx[i,j] = neighbors[n_idx,index]
-                mcn_angle[i,j] = angles[index]
-
-        return mcn_idx, mcn_angle
     
     def _averageNeighborDistance(self) -> float:
         """Computes the average distance between each point and its neighbors
