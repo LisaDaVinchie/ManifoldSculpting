@@ -6,7 +6,7 @@ import utils as u
 
 class ManifoldSculpting():
 
-    def __init__(self, n_neighbors=5, n_components = 2, iterations = 100, sigma = 0.99, perform_pca = True, max_iter_no_change = 30):
+    def __init__(self, n_neighbors: int = 5, n_components: int = 2, iterations: int = 100, sigma: float = 0.99, perform_pca: bool = True, max_iter_no_change: int = 30):
         """Used to pass parameters to che class
 
         Args:
@@ -17,17 +17,16 @@ class ManifoldSculpting():
             perform_pca (bool, optional): Decide if you want to perform PCA. Defaults to True.
             max_iter_no_change (int, optional): Maximum number of iterations with no change in the error. Defaults to 30.
         """
-        self.n_neighbors = n_neighbors
-        self.n_components = n_components
-        self.n_iterations = iterations
-        self.sigma = sigma
-        self.rotate = perform_pca
+        self.n_neighbors: int = n_neighbors
+        self.n_components: int = n_components
+        self.n_iterations: int = iterations
+        self.sigma: float = sigma
+        self.rotate: bool = perform_pca
+        self.scale_factor: float = 1
 
-        self.scale_factor = 1
+        self.max_iter_no_change: int = max_iter_no_change
 
-        self.max_iter_no_change = max_iter_no_change
-
-    def fit(self, data: np.ndarray, folder: Path = "./", figs_subfolder: str = "figs", checkpoint_interval = 10, scale_factor_threshold: float = 0.01, savefig: bool = False) -> np.ndarray:
+    def fit(self, data: np.ndarray, folder: Path = "./", figs_subfolder: str = "figs", checkpoint_interval: int = 10, scale_factor_threshold: float = 0.01, savefig: bool = False) -> np.ndarray:
         """Pass the dataset to transform it into a lower dimension
 
         Args:
@@ -42,13 +41,13 @@ class ManifoldSculpting():
             MatrixLike: transformed dataset
         """
         self.data = data
-        self.folder = folder
-        self.n_points = self.data.shape[0]
-        self.savefig = savefig
+        self.folder: Path = folder
+        self.n_points: int = self.data.shape[0]
+        self.savefig: bool = savefig
         
-        self.figs_folder = folder / figs_subfolder
+        self.figs_folder: Path = folder / figs_subfolder
         
-        # Initialise KNN and MCN
+        # 1) Initialise KNN and MCN
         self.neighbours, self.distances0, self.avg_dist0= u.find_KNN(self.data, self.n_neighbors)
         self.mcn_index, self.mcn_angles = u.find_MCN(self.data, self.neighbours, self.n_neighbors)
         
