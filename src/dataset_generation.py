@@ -16,7 +16,7 @@ class swissRoll:
         """Generates a 3D swiss roll dataset with N samples.
 
         Returns:
-            np.ndarray: 3D swiss roll dataset.
+            np.ndarray: 3D swiss roll dataset, as a N x 3 matrix.
         """
         dataset = np.ndarray((self.N, 3))
 
@@ -32,7 +32,7 @@ class swissRoll:
         """Generates the 2D version of the swiss roll dataset with N samples.
 
         Returns:
-            np.ndarray: 2D swiss roll dataset.
+            np.ndarray: 2D swiss roll dataset, as a N x 2 matrix.
         """
         dataset = np.ndarray((self.N, 2))
 
