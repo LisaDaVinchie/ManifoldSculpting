@@ -197,8 +197,8 @@ class ManifoldSculpting():
         lr = self.learning_rate
         improved = True
 
-        err = self._compute_error(p, visited)
-        s = 0
+        err = self._compute_error(p, visited) # Initial error for the point
+        s = 0 # Number of steps taken to adjust the point
         while (s < s_threshold) and improved:
             s += 1
             improved = False
@@ -229,39 +229,41 @@ class ManifoldSculpting():
         """
         N = self.pca_data.shape[0]
         
-        origin = np.random.choice(np.arange(N, dtype=int))
-
+        # Choose a random starting point, initialize the queue and the visited set
+        origin = np.random.choice(np.arange(N, dtype=int)) 
         q = deque([origin])
         visited = set()
 
+        # Scale down the scaling dimensions
         self.scale_factor *= self.sigma
-       
-        self.pca_data[:,self.d_scal] *= self.sigma
+        self.pca_data[:, self.d_scal] *= self.sigma
         
-        dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
-        while dist < self.avg_dist0:
-            self.pca_data[:,self.d_pres] /= self.sigma
-            dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
+        # Scale up the preserved dimensions until the average distance is restored
+        avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
+        while avg_dist < self.avg_dist0:
+            self.pca_data[:, self.d_pres] /= self.sigma
+            avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
 
         step = 0
         mean_error = 0
         counter = 0
-
+        # Traverse the unvisited points and adjust them,
+        # then add their neighbors to the queue and mark them as visited
         while q:
-            p_idx = q.popleft()
+            p_idx = q.popleft() # Return the first element and remove it from the queue
             if p_idx in visited:
                 continue
             
             q.extend(self.neighbours[p_idx, :])
 
-            s,err = self._adjust_point(p_idx,visited)
-            step += s
+            adjusting_steps, err = self._adjust_point(p_idx, visited)
+            step += adjusting_steps
             mean_error += err
             counter += 1
             visited.add(p_idx)
 
         mean_error /= counter
-
+        
         if step < N:
             self.learning_rate *= 0.90
         else:
