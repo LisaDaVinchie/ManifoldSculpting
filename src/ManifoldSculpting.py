@@ -47,12 +47,13 @@ class ManifoldSculpting():
         
         self.figs_folder: Path = folder / figs_subfolder
         
-        # 1) Initialise KNN and MCN
+        # 1 - 2) Initialise KNN and MCN and calculate distances and angles
         self.neighbours, self.distances0, self.avg_dist0= u.find_KNN(self.data, self.n_neighbors)
         self.mcn_index, self.mcn_angles = u.find_MCN(self.data, self.neighbours, self.n_neighbors)
         
         self.learning_rate = self.avg_dist0
-
+        
+        # 3) Optional: align the data with PCA
         if self.rotate:
             self.pca_data = u.compute_PCA(self.data)
             self.d_pres = np.arange(self.n_components, dtype=np.int32)
@@ -67,7 +68,6 @@ class ManifoldSculpting():
         # Save initial state
         self.save_checkpoint(0)
         
-        # Initialize epoch counter
         self.epoch: int = 1
 
         print(f"Starting manifold sculpting with {self.n_points} points and {self.n_neighbors} neighbors.\n")
@@ -80,6 +80,7 @@ class ManifoldSculpting():
         epochs_since_improvement = 0
         best_error = np.inf
         
+        # 4) Until the stopping criteria is met, perform manifold sculpting steps
         while (self.epoch < self.n_iterations) and (epochs_since_improvement < self.max_iter_no_change):
             print(f"Epoch {self.epoch}...")
             mean_error = self._step()
@@ -233,11 +234,11 @@ class ManifoldSculpting():
         q = deque([origin])
         visited = set()
 
-        # Scale down the scaling dimensions
+        # 4.1) Scale down the scaling dimensions
         self.scale_factor *= self.sigma
         self.pca_data[:, self.d_scal] *= self.sigma
         
-        # Scale up the preserved dimensions until the average distance is restored
+        # 4.2) Scale up the preserved dimensions until the average distance is restored
         avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
         while avg_dist < self.avg_dist0:
             self.pca_data[:, self.d_pres] /= self.sigma
