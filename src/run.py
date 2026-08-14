@@ -1,5 +1,5 @@
 import ManifoldSculpting as ms
-from dataset_generation.dataset_generation import swissRoll
+from dataset_generation.dataset_generation import SwissRoll
 from generate_gif import generate_gif
 from pathlib import Path
 
@@ -17,7 +17,7 @@ def main():
     figs_subfolder = "figs/"
 
     print("Generating swiss roll dataset...")
-    swissroll = swissRoll(N)
+    swissroll = SwissRoll(N)
     X_3d, _ = swissroll.generate_and_save(dataset_folder=dataset_folder, overwrite=False)
     print(f"Swiss roll dataset with {N} points generated and saved.\n")
     
