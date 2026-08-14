@@ -94,13 +94,21 @@ def average_neighbor_distance(data: np.ndarray, neighbors: np.ndarray, n_points:
         float: average distance between each point and its neighbors
     """
     
-    dist = 0
-    count = 0
-    for p_idx in range(n_points):
-        p = data[p_idx]
-        for n in neighbors[p_idx]:
-            count += 1
-            dist += np.linalg.norm(p - data[n])
-    dist /= count
+    # dist = 0
+    # count = 0
+    # for p_idx in range(n_points):
+    #     p = data[p_idx]
+    #     for n in neighbors[p_idx]:
+    #         count += 1
+    #         dist += np.linalg.norm(p - data[n])
+    # dist /= count
+    
+    N = data.shape[0]
+    
+    x2 = np.sum(data * data, axis = 1)
+    data_t = np.copy(data.T)
+    xx = data @ data_t
+    dist = np.sqrt(np.abs(x2.reshape((-1,1)) - 2 * xx + x2))
+    dist = np.mean(dist[np.arange(N)[:,None], neighbors])
     
     return dist
