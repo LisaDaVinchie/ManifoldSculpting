@@ -87,8 +87,10 @@ class SwissRoll:
         filename_2d = folder2d / f'{file_name_prefix}_{self.n_points}.npy'
 
         if not overwrite and filename_3d.exists() and filename_2d.exists():
-            print(f"Files {filename_3d} and {filename_2d} already exist. Importing existing datasets.")
-            return np.load(filename_3d), np.load(filename_2d)
+            print(
+                f"Files {filename_3d} and {filename_2d} already exist. "
+                + "Importing existing datasets."
+            )
 
         swissroll_3d = self.generate_3d()
         swissroll_2d = self.generate_2d()
@@ -96,4 +98,13 @@ class SwissRoll:
         self.save(filename_3d, swissroll_3d)
         self.save(filename_2d, swissroll_2d)
 
-        return swissroll_3d, swissroll_2d
+        print(f"Datasets saved to {filename_3d} and {filename_2d}")
+
+if __name__ == '__main__':
+    N = 800  # Number of points in the dataset
+
+    savedir = Path("./data/datasets/") # Folder to save/load datasets
+
+    print("Generating swiss roll dataset...")
+    swissroll = SwissRoll(N)
+    swissroll.generate_and_save(dataset_folder=savedir, overwrite=False)
