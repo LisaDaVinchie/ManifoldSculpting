@@ -1,5 +1,5 @@
 import ManifoldSculpting as ms
-from dataset_generation import swissRoll
+from dataset_generation.dataset_generation import swissRoll
 from generate_gif import generate_gif
 from pathlib import Path
 
