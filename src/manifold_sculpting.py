@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from utils import find_knn, find_mcn, compute_pca, average_neighbor_distance
 
 class ManifoldSculpting:
+    """Perform manifold sculpting on the dataset"""
 
     def __init__(
         self,
