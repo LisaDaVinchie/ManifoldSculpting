@@ -36,8 +36,8 @@ def main(filepath: Path, savedir: Path):
                                 iterations=n_iterations,
                                 max_iter_no_change=max_iter_no_change)
 
-    X_MS = model.fit(dataset_3d, folder = destination_folder, checkpoint_interval = save_every, figs_subfolder=figs_subfolder, savefig=generate_gif_flag)
-    print(f"Manifold sculpting completed. Transformed data shape: {X_MS.shape}\n")
+    dataset_ms = model.fit(dataset_3d, folder = destination_folder, checkpoint_interval = save_every, figs_subfolder=figs_subfolder, savefig=generate_gif_flag)
+    print(f"Manifold sculpting completed. Transformed data shape: {dataset_ms.shape}\n")
 
     if generate_gif_flag:
         try:
