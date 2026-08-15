@@ -69,9 +69,6 @@ class SwissRoll:
         Args:
             folder (Path): folder to save the datasets.
             overwrite (bool, optional): whether to overwrite existing files. Defaults to False.
-            subfolder_2d (str, optional): subfolder name for 2D dataset. Defaults to "2d".
-            subfolder_3d (str, optional): subfolder name for 3D dataset. Defaults to "3d".
-            file_name_prefix (str, optional): prefix for the saved file names. Defaults to "N".
         
         Returns:
             tuple[np.ndarray, np.ndarray]: The generated 3D and 2D swiss roll datasets.
