@@ -20,6 +20,10 @@ class SwissRoll:
         Args:
             N (int): number of points in the dataset.
         """
+
+        if n_points <= 1:
+            raise ValueError(f"At least one point is required, got {n_points}")
+
         self.n_points: int = n_points
         self.t = 8 * np.arange(n_points) / n_points + 2
         self.y = np.random.uniform(-6, 6, self.n_points)
@@ -87,10 +91,12 @@ class SwissRoll:
             )
 
         swissroll_3d = self.generate_3d()
-        swissroll_2d = self.generate_2d()
-
         self.save(filename_3d, swissroll_3d)
+        del filename_3d
+
+        swissroll_2d = self.generate_2d()
         self.save(filename_2d, swissroll_2d)
+        del filename_2d
 
         print(f"Datasets saved to {filename_3d} and {filename_2d}")
 
