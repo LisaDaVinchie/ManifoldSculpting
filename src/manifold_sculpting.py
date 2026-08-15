@@ -49,7 +49,7 @@ class ManifoldSculpting():
         
         # 1 - 2) Initialise KNN and MCN and calculate distances and angles
         self.neighbours, self.distances0, self.avg_dist0= u.find_knn(self.data, self.n_neighbors)
-        self.mcn_index, self.mcn_angles = u.find_MCN(self.data, self.neighbours, self.n_neighbors)
+        self.mcn_index, self.mcn_angles = u.find_mcn(self.data, self.neighbours, self.n_neighbors)
         
         self.learning_rate = self.avg_dist0
         

@@ -46,7 +46,11 @@ def find_knn(data: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray
 
     return neighbors, distances, average_dist
 
-def find_MCN(data: np.ndarray, neighbors: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray]:
+def find_mcn(
+    data: np.ndarray,
+    neighbors: np.ndarray,
+    n_neighbors: int
+) -> tuple[np.ndarray, np.ndarray]:
     """Find most collinear neighbors for each point in the dataset
 
     Args:
