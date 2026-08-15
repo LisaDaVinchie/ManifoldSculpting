@@ -54,8 +54,9 @@ def find_mcn(
     """Find most collinear neighbors for each point in the dataset
 
     Args:
-        data (np.ndarray): The dataset to calculate the MCN on
-        neighbors (np.ndarray): The K nearest neighbors for each point
+        data (np.ndarray): dataset, as a (N, 3) ndarray of 3D points
+        neighbors (np.ndarray): neighbors matrix, as a (N, K) ndarray of the indices of the
+            K nearest neighbors for each point
         n_neighbors (int): The number of neighbors to calculate
 
     Returns:
@@ -71,24 +72,45 @@ def find_mcn(
         p = data[i, :]
 
         for j, n_idx in enumerate(neighbors[i]):
-            n = data[n_idx, :]
-            pn = p - n
-            pn_dist = np.linalg.norm(pn)
+            angle, neighbors = _calculate_point_mcn(data, neighbors, p, n_idx)
 
-            nm = data[neighbors[n_idx]] - n
-            nm_dist = np.linalg.norm(nm, axis=1)
-
-            cosines = np.sum(pn * nm, axis=1) / (pn_dist * nm_dist)
-            cosines = np.clip(cosines, -1, 1)
-
-            angles = np.arccos(cosines)
-
-            index = np.argmin(np.abs(angles - np.pi))
-
-            mcn_idx[i,j] = neighbors[n_idx,index]
-            mcn_angle[i,j] = angles[index]
+            mcn_idx[i,j] = neighbors
+            mcn_angle[i,j] = angle
 
     return mcn_idx, mcn_angle
+
+def _calculate_point_mcn(
+    data: np.ndarray,
+    neighbors: np.ndarray,
+    p: np.ndarray,
+    n_idx: int
+) -> tuple[float, float]:
+    """Find the `p`'s and `n`'s most collinear neighbor
+
+    Args:
+        data (np.ndarray): dataset, as a (N, 3) numpy ndarray
+        neighbors (np.ndarray): neighbors matrix, as a (N, 3) numpy ndarray
+        p (np.ndarray): point, as a (1, 3)
+        n_idx (int): index of `p`'s neighbor `n`
+
+    Returns:
+        tuple[float, float]: angle and index of `p`'s and `n`'s most collinear neighbor.  
+    """
+    n = data[n_idx, :]
+    pn = p - n
+    pn_dist = np.linalg.norm(pn)
+
+    nm = data[neighbors[n_idx]] - n
+    nm_dist = np.linalg.norm(nm, axis=1)
+
+    cosines = np.sum(pn * nm, axis=1) / (pn_dist * nm_dist)
+    cosines = np.clip(cosines, -1, 1)
+
+    angles = np.arccos(cosines)
+
+    index = np.argmin(np.abs(angles - np.pi))
+
+    return angles[index], neighbors[n_idx, index]
 
 def average_neighbor_distance(data: np.ndarray, neighbors: np.ndarray) -> float:
     """Computes the average distance between each point and its neighbors.
