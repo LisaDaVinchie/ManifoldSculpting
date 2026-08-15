@@ -51,7 +51,7 @@ class ManifoldSculpting:
         """
 
         self.folder: Path = folder
-        self.n_points: int = data.shape[0]
+        n_points: int = data.shape[0]
         self.savefig: bool = savefig
         
         self.figs_folder: Path = folder / figs_subfolder
@@ -79,7 +79,7 @@ class ManifoldSculpting:
         
         self.epoch: int = 1
 
-        print(f"Starting manifold sculpting with {self.n_points} points and {self.n_neighbors} neighbors.\n")
+        print(f"Starting manifold sculpting with {n_points} points and {self.n_neighbors} neighbors.\n")
         
         print(f"Starting heat up with scale factor {self.scale_factor}.\n")
         mean_error = self._heat_up(checkpoint_interval, scale_factor_threshold, figs_subfolder, savefig)
