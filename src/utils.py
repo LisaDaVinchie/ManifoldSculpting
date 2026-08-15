@@ -16,7 +16,7 @@ def compute_pca(data: np.ndarray) -> np.ndarray:
 
     return data@eigvec
 
-def find_KNN(data: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray, float]:
+def find_knn(data: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray, float]:
     """Calculate the K nearest neighbors for each point in
     the dataset and their distances from the point.
 
