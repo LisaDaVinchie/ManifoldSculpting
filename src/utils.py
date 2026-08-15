@@ -1,6 +1,8 @@
+"""Manifold sculpting helper functions"""
+
 import numpy as np
 
-def compute_PCA(data) -> np.ndarray:
+def compute_pca(data: np.ndarray) -> np.ndarray:
     """Compute the kernel PCA of the dataset
     Args:
         data (np.ndarray): The dataset to compute the PCA on

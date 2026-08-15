@@ -55,7 +55,7 @@ class ManifoldSculpting():
         
         # 3) Optional: align the data with PCA
         if self.rotate:
-            self.pca_data = u.compute_PCA(self.data)
+            self.pca_data = u.compute_pca(self.data)
             self.d_pres = np.arange(self.n_components, dtype=np.int32)
             self.d_scal = np.arange(self.n_components, self.data.shape[1], dtype=np.int32)
         else:
