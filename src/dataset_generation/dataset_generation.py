@@ -8,6 +8,8 @@ As for the paper, I will provide algorithms to generate:
 """
 
 from pathlib import Path
+from argparse import ArgumentParser
+
 import numpy as np
 
 class SwissRoll:
@@ -93,10 +95,17 @@ class SwissRoll:
         print(f"Datasets saved to {filename_3d} and {filename_2d}")
 
 if __name__ == '__main__':
-    N = 800  # Number of points in the dataset
 
-    savedir = Path("./data/datasets/") # Folder to save/load datasets
+    p = ArgumentParser()
+
+    p.add_argument("--points", required=True, type=int, help="Number of points in the dataset")
+    p.add_argument(
+        "--savedir", required=True, type=Path,
+        help="Name of the folder containing the 2d and 3d datasets."
+    )
+
+    args = p.parse_args()
 
     print("Generating swiss roll dataset...")
-    swissroll = SwissRoll(N)
-    swissroll.generate_and_save(folder=savedir, overwrite=False)
+    swissroll = SwissRoll(args.points)
+    swissroll.generate_and_save(folder=args.savedir, overwrite=False)
