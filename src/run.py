@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 
-import ManifoldSculpting as ms
+import manifold_sculpting as ms
 from generate_gif import generate_gif
 
 def main(filepath: Path, savedir: Path):
