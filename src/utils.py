@@ -58,11 +58,11 @@ def find_MCN(data: np.ndarray, neighbors: np.ndarray, n_neighbors: int) -> tuple
         tuple[np.ndarray, np.ndarray]: The indices of the most collinear neighbors for each point
         and the angles to the most collinear neighbors for each point
     """
-    N = data.shape[0]
-    mcn_idx = np.zeros((N, n_neighbors), dtype=np.int32)
-    mcn_angle = np.zeros((N, n_neighbors), dtype=np.float32)
-    
-    for i in range(N):
+    n_points = data.shape[0]
+    mcn_idx = np.zeros((n_points, n_neighbors), dtype=np.int32)
+    mcn_angle = np.zeros((n_points, n_neighbors), dtype=np.float32)
+
+    for i in range(n_points):
 
         p = data[i, :]
 
