@@ -239,10 +239,10 @@ class ManifoldSculpting():
         self.pca_data[:, self.d_scal] *= self.sigma
         
         # 4.2) Scale up the preserved dimensions until the average distance is restored
-        avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
+        avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours)
         while avg_dist < self.avg_dist0:
             self.pca_data[:, self.d_pres] /= self.sigma
-            avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours, self.n_points)
+            avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours)
 
         step = 0
         mean_error = 0
