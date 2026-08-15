@@ -1,27 +1,31 @@
-import ManifoldSculpting as ms
-from dataset_generation.dataset_generation import SwissRoll
-from generate_gif import generate_gif
-from pathlib import Path
+"""Run the manifold sculpting algorithm"""
 
-def main():
-    N = 800  # Number of points in the dataset
+from pathlib import Path
+from argparse import ArgumentParser
+
+import numpy as np
+
+import ManifoldSculpting as ms
+from generate_gif import generate_gif
+
+def main(filepath: Path, savedir: Path):
     n_neighbors = 10  # Number of neighbors for the manifold sculpting algorithm
     n_components = 2  # Number of components for the manifold sculpting algorithm
     max_iter_no_change = 50  # Maximum iterations without change
     n_iterations = 100  # Total number of iterations for the algorithm
     save_every = 10  # Save every n iterations
     generate_gif_flag = True  # Whether to generate a GIF of the evolution
-    
-    dataset_folder = Path("./data/datasets/") # Folder to save/load datasets
-    checkpoint_folder = Path("./data/checkpoints/") # Folder to save checkpoints
+
+    if not filepath.exists():
+        raise ValueError(f"Dataset {filepath} does not exist!")
+
     figs_subfolder = "figs/"
 
-    print("Generating swiss roll dataset...")
-    swissroll = SwissRoll(N)
-    X_3d, _ = swissroll.generate_and_save(folder=dataset_folder, overwrite=False)
-    print(f"Swiss roll dataset with {N} points generated and saved.\n")
-    
-    destination_folder = find_next_available_index(checkpoint_folder)
+    print(f"Loading {filepath}...\n")
+    dataset_3d = np.load(filepath)
+    print(f"Dataset {filepath} loaded.\n")
+
+    destination_folder = find_next_available_index(savedir)
     figs_folder = destination_folder / figs_subfolder
     figs_folder.mkdir(parents=True, exist_ok=True)
     print(f"Checkpoint folder created at: {destination_folder}, figures saved to {figs_folder}\n")
@@ -32,9 +36,9 @@ def main():
                                 iterations=n_iterations,
                                 max_iter_no_change=max_iter_no_change)
 
-    X_MS = model.fit(X_3d, folder = destination_folder, checkpoint_interval = save_every, figs_subfolder=figs_subfolder, savefig=generate_gif_flag)
+    X_MS = model.fit(dataset_3d, folder = destination_folder, checkpoint_interval = save_every, figs_subfolder=figs_subfolder, savefig=generate_gif_flag)
     print(f"Manifold sculpting completed. Transformed data shape: {X_MS.shape}\n")
-    
+
     if generate_gif_flag:
         try:
             print("Generating GIF from saved figures...")
@@ -47,7 +51,7 @@ def main():
 
 def find_next_available_index(checkpoint_folder: Path, file_name: str = "trial") -> Path:
     checkpoint_folder.mkdir(parents=True, exist_ok=True)
-    
+
     idx = 1
     destination_folder = Path(checkpoint_folder / f"{file_name}_{idx}/")
     while destination_folder.exists():
@@ -57,4 +61,16 @@ def find_next_available_index(checkpoint_folder: Path, file_name: str = "trial")
     return destination_folder
 
 if __name__ == "__main__":
-    main()
+    p = ArgumentParser()
+
+    p.add_argument(
+        "--dataset", required=True, type=Path,
+        help="Path to the 3d dataset to run Manifold Sculpting on"
+    )
+    p.add_argument(
+        "--savedir", required=True, type=Path,
+        help="Path to the folder to save the results to."
+    )
+
+    args = p.parse_args()
+    main(args.dataset, args.savedir)
