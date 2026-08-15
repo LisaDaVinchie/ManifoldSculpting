@@ -17,7 +17,8 @@ def compute_pca(data: np.ndarray) -> np.ndarray:
     return data@eigvec
 
 def find_KNN(data: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray, float]:
-    """Calculate the K nearest neighbors for each point in the dataset and their distances from the point.
+    """Calculate the K nearest neighbors for each point in
+    the dataset and their distances from the point.
 
     Args:
         data (np.ndarray): The dataset to calculate the KNN on
@@ -28,23 +29,23 @@ def find_KNN(data: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray
         the distances to the K nearest neighbors for each point and
         the average distance to the K nearest neighbors across all points
     """
-    N = data.shape[0]
-    
+    n_points = data.shape[0]
+
     x2 = np.sum(data * data, axis = 1)
     data_t = np.copy(data.T)
     xx = data @ data_t
     dist = np.sqrt(np.abs(x2.reshape((-1,1)) - 2 * xx + x2))
 
-    neighbors = np.zeros((N, n_neighbors), dtype=np.int32)
-    distances = np.zeros((N, n_neighbors), dtype=np.float32)
-    for i in range(N):
+    neighbors = np.zeros((n_points, n_neighbors), dtype=np.int32)
+    distances = np.zeros((n_points, n_neighbors), dtype=np.float32)
+    for i in range(n_points):
         neighbors[i] = np.argsort(dist[i])[1 : n_neighbors + 1]
         distances[i, :] = dist[i, neighbors[i]]
-        
+
     average_dist = np.mean(distances)
 
     return neighbors, distances, average_dist
-    
+
 def find_MCN(data: np.ndarray, neighbors: np.ndarray, n_neighbors: int) -> tuple[np.ndarray, np.ndarray]:
     """Find most collinear neighbors for each point in the dataset
 
