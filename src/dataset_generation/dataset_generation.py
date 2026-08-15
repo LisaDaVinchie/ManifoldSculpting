@@ -62,9 +62,7 @@ class SwissRoll:
 
     def generate_and_save(
         self,
-        dataset_folder: Path, overwrite: bool = False,
-        subfolder_2d: str = "2d", subfolder_3d: str = "3d",
-        file_name_prefix: str = "N"
+        folder: Path, overwrite: bool = False
     ):
         """Generates and saves the 3D and 2D swiss roll datasets, if needed, and returns them.
 
@@ -79,12 +77,9 @@ class SwissRoll:
             tuple[np.ndarray, np.ndarray]: The generated 3D and 2D swiss roll datasets.
         """
 
-        folder3d = dataset_folder / subfolder_3d
-        folder2d = dataset_folder / subfolder_2d
-        folder3d.mkdir(parents=True, exist_ok=True)
-        folder2d.mkdir(parents=True, exist_ok=True)
-        filename_3d = folder3d / f'{file_name_prefix}_{self.n_points}.npy'
-        filename_2d = folder2d / f'{file_name_prefix}_{self.n_points}.npy'
+        folder.mkdir(parents=True, exist_ok=True)
+        filename_3d = folder / '3d.npy'
+        filename_2d = folder / '2d.npy'
 
         if not overwrite and filename_3d.exists() and filename_2d.exists():
             print(
@@ -107,4 +102,4 @@ if __name__ == '__main__':
 
     print("Generating swiss roll dataset...")
     swissroll = SwissRoll(N)
-    swissroll.generate_and_save(dataset_folder=savedir, overwrite=False)
+    swissroll.generate_and_save(folder=savedir, overwrite=False)
