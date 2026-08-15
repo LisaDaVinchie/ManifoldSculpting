@@ -49,30 +49,30 @@ class ManifoldSculpting:
         Returns:
             MatrixLike: transformed dataset
         """
-        self.data = data
+
         self.folder: Path = folder
-        self.n_points: int = self.data.shape[0]
+        self.n_points: int = data.shape[0]
         self.savefig: bool = savefig
         
         self.figs_folder: Path = folder / figs_subfolder
         
         # 1 - 2) Initialise KNN and MCN and calculate distances and angles
-        self.neighbours, self.distances0, self.avg_dist0= find_knn(self.data, self.n_neighbors)
-        self.mcn_index, self.mcn_angles = find_mcn(self.data, self.neighbours, self.n_neighbors)
+        self.neighbours, self.distances0, self.avg_dist0= find_knn(data, self.n_neighbors)
+        self.mcn_index, self.mcn_angles = find_mcn(data, self.neighbours, self.n_neighbors)
         
         self.learning_rate = self.avg_dist0
         
         # 3) Optional: align the data with PCA
         if self.rotate:
-            self.pca_data = compute_pca(self.data)
+            self.pca_data = compute_pca(data)
             self.d_pres = np.arange(self.n_components, dtype=np.int32)
-            self.d_scal = np.arange(self.n_components, self.data.shape[1], dtype=np.int32)
+            self.d_scal = np.arange(self.n_components, data.shape[1], dtype=np.int32)
         else:
-            cov = np.cov(self.data.T)
+            cov = np.cov(data.T)
             most_important = np.argsort(-np.diag(cov)).astype(np.int32)
             self.d_pres = most_important[:self.n_components]
             self.d_scal = most_important[self.n_components:]
-            self.pca_data = np.copy(self.data)
+            self.pca_data = np.copy(data)
 
         # Save initial state
         self.save_checkpoint(0)
@@ -125,7 +125,7 @@ class ManifoldSculpting:
             self.epoch += 1
 
             if self.epoch % checkpoint_interval == 0:
-                self.save_checkpoint(self.epoch, fig_subfolder=figs_subfolder)
+                self.save_checkpoint(self.epoch)
         return mean_error
 
     def save_checkpoint(self, epoch: int, basename: str = "checkpoint", extension: str = "npy", fig_extension: str = "png"):
