@@ -1,12 +1,20 @@
-import numpy as np
+"""Manifold sculpting class"""
 from collections import deque
 from pathlib import Path
+
+import numpy as np
 import matplotlib.pyplot as plt
-import utils as u
 
-class ManifoldSculpting():
+from utils import find_knn, find_mcn, compute_pca, average_neighbor_distance
 
-    def __init__(self, n_neighbors: int = 5, n_components: int = 2, iterations: int = 100, sigma: float = 0.99, perform_pca: bool = True, max_iter_no_change: int = 30):
+class ManifoldSculpting:
+
+    def __init__(
+        self,
+        n_neighbors: int = 5, n_components: int = 2,
+        iterations: int = 100, sigma: float = 0.99,
+        perform_pca: bool = True, max_iter_no_change: int = 30
+    ):
         """Used to pass parameters to che class
 
         Args:
@@ -48,14 +56,14 @@ class ManifoldSculpting():
         self.figs_folder: Path = folder / figs_subfolder
         
         # 1 - 2) Initialise KNN and MCN and calculate distances and angles
-        self.neighbours, self.distances0, self.avg_dist0= u.find_knn(self.data, self.n_neighbors)
-        self.mcn_index, self.mcn_angles = u.find_mcn(self.data, self.neighbours, self.n_neighbors)
+        self.neighbours, self.distances0, self.avg_dist0= find_knn(self.data, self.n_neighbors)
+        self.mcn_index, self.mcn_angles = find_mcn(self.data, self.neighbours, self.n_neighbors)
         
         self.learning_rate = self.avg_dist0
         
         # 3) Optional: align the data with PCA
         if self.rotate:
-            self.pca_data = u.compute_pca(self.data)
+            self.pca_data = compute_pca(self.data)
             self.d_pres = np.arange(self.n_components, dtype=np.int32)
             self.d_scal = np.arange(self.n_components, self.data.shape[1], dtype=np.int32)
         else:
@@ -237,12 +245,12 @@ class ManifoldSculpting():
         # 4.1) Scale down the scaling dimensions
         self.scale_factor *= self.sigma
         self.pca_data[:, self.d_scal] *= self.sigma
-        
+
         # 4.2) Scale up the preserved dimensions until the average distance is restored
-        avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours)
+        avg_dist = average_neighbor_distance(self.pca_data, self.neighbours)
         while avg_dist < self.avg_dist0:
             self.pca_data[:, self.d_pres] /= self.sigma
-            avg_dist = u.average_neighbor_distance(self.pca_data, self.neighbours)
+            avg_dist = average_neighbor_distance(self.pca_data, self.neighbours)
 
         step = 0
         mean_error = 0
