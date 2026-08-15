@@ -18,7 +18,7 @@ def main():
 
     print("Generating swiss roll dataset...")
     swissroll = SwissRoll(N)
-    X_3d, _ = swissroll.generate_and_save(dataset_folder=dataset_folder, overwrite=False)
+    X_3d, _ = swissroll.generate_and_save(folder=dataset_folder, overwrite=False)
     print(f"Swiss roll dataset with {N} points generated and saved.\n")
     
     destination_folder = find_next_available_index(checkpoint_folder)
